@@ -1,0 +1,35 @@
+{
+  "name": "multi-token-swap",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": ["defi", "swap", "ethereum", "base", "1inch", "batch-swap", "limit-orders"],
+  "author": "ETHRome Hackathon",
+  "license": "MIT",
+  "description": "Multi-token swap protocol with batch transactions and limit orders on Base",
+  "dependencies": {
+    "@1inch/fusion-sdk": "^2.1.12-rc.0",
+    "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
+    "@rainbow-me/rainbowkit": "^2.2.8",
+    "@tanstack/react-query": "^5.90.2",
+    "@types/node": "^24.5.2",
+    "@types/react": "^19.1.14",
+    "@types/react-dom": "^19.1.9",
+    "framer-motion": "^12.23.22",
+    "lucide-react": "^0.544.0",
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "viem": "^2.37.9",
+    "wagmi": "^2.17.5"
+  }
+}
