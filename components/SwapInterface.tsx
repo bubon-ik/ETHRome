@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { PlusIcon, ArrowsUpDownIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowsUpDownIcon, Cog6ToothIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import TokenSelector from './TokenSelector';
 import AmountInput from './AmountInput';
@@ -16,23 +16,51 @@ const SwapInterface: React.FC = () => {
       to: { ...BASE_TOKENS[1], amount: '' },
     }
   ]);
+  const [currentRouteIndex, setCurrentRouteIndex] = useState(0);
   const [slippage, setSlippage] = useState(1);
   const [deadline, setDeadline] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
   const features = oneInchLimitOrderService.getFeatures();
 
+  // Keyboard navigation
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return; // Don't interfere with input fields
+      
+      if (e.key === 'ArrowLeft') {
+        setCurrentRouteIndex(prev => Math.max(0, prev - 1));
+      } else if (e.key === 'ArrowRight') {
+        setCurrentRouteIndex(prev => Math.min(routes.length - 1, prev + 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [routes.length]);
+
   const addRoute = useCallback(() => {
-    setRoutes(prev => [...prev, {
-      from: { ...BASE_TOKENS[0], amount: '' },
-      to: { ...BASE_TOKENS[1], amount: '' },
-    }]);
+    setRoutes(prev => {
+      const newRoutes = [...prev, {
+        from: { ...BASE_TOKENS[0], amount: '' },
+        to: { ...BASE_TOKENS[1], amount: '' },
+      }];
+      // Automatically navigate to the new route
+      setCurrentRouteIndex(newRoutes.length - 1);
+      return newRoutes;
+    });
   }, []);
 
   const removeRoute = useCallback((index: number) => {
     if (routes.length > 1) {
       setRoutes(prev => prev.filter((_, i) => i !== index));
+      // Adjust current index if needed
+      if (currentRouteIndex >= index && currentRouteIndex > 0) {
+        setCurrentRouteIndex(currentRouteIndex - 1);
+      } else if (currentRouteIndex >= routes.length - 1) {
+        setCurrentRouteIndex(Math.max(0, routes.length - 2));
+      }
     }
-  }, [routes.length]);
+  }, [routes.length, currentRouteIndex]);
 
   const updateRoute = useCallback((index: number, updatedRoute: SwapRouteType) => {
     setRoutes(prev => prev.map((route, i) => i === index ? updatedRoute : route));
@@ -152,32 +180,148 @@ const SwapInterface: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Swap Routes */}
-        <div className="space-y-4 mb-6">
-          {routes.map((route, index) => (
-            <div key={index} className="relative">
-              <SwapRoute
-                route={route}
-                index={index}
-                onUpdate={(updatedRoute) => updateRoute(index, updatedRoute)}
-                onRemove={() => removeRoute(index)}
-                onSwap={() => swapTokens(index)}
-                canRemove={routes.length > 1}
-              />
+        {/* Swap Routes Carousel */}
+        <div className="mb-6">
+          {/* Route Navigation Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">
+                Swap Routes
+              </h3>
+              <div className="flex items-center gap-1">
+                {routes.map((_, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setCurrentRouteIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      currentRouteIndex === index 
+                        ? 'bg-primary-500 w-6' 
+                        : 'bg-gray-300 dark:bg-gray-600 hover:bg-primary-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300">
+                {currentRouteIndex + 1} of {routes.length}
+              </span>
             </div>
-          ))}
+            
+            {/* Navigation Arrows */}
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentRouteIndex(Math.max(0, currentRouteIndex - 1))}
+                disabled={currentRouteIndex === 0}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  currentRouteIndex === 0
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <ChevronLeftIcon className="w-5 h-5" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentRouteIndex(Math.min(routes.length - 1, currentRouteIndex + 1))}
+                disabled={currentRouteIndex === routes.length - 1}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  currentRouteIndex === routes.length - 1
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <ChevronRightIcon className="w-5 h-5" />
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Cards Container */}
+          <motion.div 
+            className="relative overflow-hidden rounded-2xl"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            onDragEnd={(_, { offset, velocity }) => {
+              const swipe = Math.abs(offset.x) * velocity.x;
+              
+              if (swipe < -10000) {
+                // Swipe left (next route)
+                setCurrentRouteIndex(prev => Math.min(routes.length - 1, prev + 1));
+              } else if (swipe > 10000) {
+                // Swipe right (previous route)
+                setCurrentRouteIndex(prev => Math.max(0, prev - 1));
+              }
+            }}
+          >
+            <motion.div 
+              className="flex"
+              animate={{ x: -currentRouteIndex * 100 + '%' }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              {routes.map((route, index) => (
+                <div key={index} className="w-full flex-shrink-0">
+                  <motion.div
+                    initial={false}
+                    animate={{ 
+                      scale: currentRouteIndex === index ? 1 : 0.95,
+                      opacity: currentRouteIndex === index ? 1 : 0.7 
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="mx-2"
+                  >
+                    <SwapRoute
+                      route={route}
+                      index={index}
+                      onUpdate={(updatedRoute) => updateRoute(index, updatedRoute)}
+                      onRemove={() => removeRoute(index)}
+                      onSwap={() => swapTokens(index)}
+                      canRemove={routes.length > 1}
+                    />
+                  </motion.div>
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
         </div>
 
         {/* Add Route Button */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={addRoute}
-          className="w-full flex items-center justify-center gap-3 py-4 px-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-600 dark:text-gray-400 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-300"
-        >
-          <PlusIcon className="w-5 h-5" />
-          <span className="font-medium">Add Another Swap</span>
-        </motion.button>
+        <div className="flex items-center gap-4">
+          <motion.button
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={addRoute}
+            className="flex-1 flex items-center justify-center gap-3 py-4 px-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-600 dark:text-gray-400 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-300 group"
+          >
+            <motion.div
+              whileHover={{ rotate: 90 }}
+              transition={{ duration: 0.2 }}
+            >
+              <PlusIcon className="w-5 h-5" />
+            </motion.div>
+            <span className="font-medium">Add Another Swap Route</span>
+            <motion.div
+              initial={{ x: 0 }}
+              animate={{ x: [0, 4, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              className="text-primary-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            >
+              →
+            </motion.div>
+          </motion.button>
+          
+          {routes.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-gradient-to-r from-primary-500 to-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg"
+            >
+              {routes.length} Routes
+            </motion.div>
+          )}
+        </div>
 
         {/* Batch Swap Button */}
         <div className="mt-6">
