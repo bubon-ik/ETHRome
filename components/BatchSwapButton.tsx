@@ -107,23 +107,23 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
     <div className="space-y-4">
       {/* Swap Summary */}
       {quotes.length > 0 && (
-        <div className="bg-gray-50 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Swap Summary</h3>
+        <div className="bg-white/20 dark:bg-black/20 backdrop-blur-sm rounded-xl p-4 border border-white/30 dark:border-white/10">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Swap Summary</h3>
           <div className="space-y-2">
             {quotes.map((quote, index) => (
               <div key={index} className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">
+                <span className="text-gray-600 dark:text-gray-400">
                   {quote.fromToken.symbol} → {quote.toToken.symbol}
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-gray-900 dark:text-white">
                   {(parseFloat(quote.toAmount) / Math.pow(10, quote.toToken.decimals)).toFixed(4)} {quote.toToken.symbol}
                 </span>
               </div>
             ))}
-            <div className="pt-2 border-t border-gray-200">
+            <div className="pt-2 border-t border-white/20 dark:border-white/10">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Total Gas (est.)</span>
-                <span className="font-medium">{totalGas} GWEI</span>
+                <span className="text-gray-600 dark:text-gray-400">Total Gas (est.)</span>
+                <span className="font-medium text-gray-900 dark:text-white">{totalGas} GWEI</span>
               </div>
             </div>
           </div>
@@ -139,14 +139,14 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
 
       {/* Success Display */}
       {isSuccess && txHash && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-          <p className="text-green-700 text-sm">
+        <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4 backdrop-blur-sm">
+          <p className="text-green-700 dark:text-green-300 text-sm">
             Batch swap successful! 
             <a
               href={`https://basescan.org/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-1 underline hover:no-underline"
+              className="ml-1 underline hover:no-underline font-medium"
             >
               View on BaseScan
             </a>
@@ -160,8 +160,8 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
         disabled={isDisabled}
         className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
           isDisabled
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'btn-primary hover:shadow-xl'
+            ? 'bg-gray-400/20 text-gray-500 cursor-not-allowed backdrop-blur-sm border border-gray-400/30'
+            : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl backdrop-blur-sm'
         }`}
       >
         {isLoading && (

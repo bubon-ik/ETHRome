@@ -8,7 +8,15 @@
   }
   
   body {
-    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300;
+    @apply text-gray-900 dark:text-white transition-colors duration-300;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+  
+  /* Add backdrop filter support */
+  * {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
 
@@ -20,11 +28,15 @@
   }
   
   .glass-effect {
-    @apply backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/20;
+    @apply backdrop-blur-xl bg-white/10 dark:bg-black/10 border border-white/20 dark:border-white/10 shadow-2xl;
+  }
+  
+  .glass-card {
+    @apply backdrop-blur-xl bg-white/20 dark:bg-black/20 border border-white/30 dark:border-white/10 shadow-2xl rounded-2xl;
   }
   
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300;
+    @apply backdrop-blur-xl bg-white/20 dark:bg-black/20 rounded-2xl shadow-2xl border border-white/30 dark:border-white/10 p-6;
   }
   
   .btn-primary {

@@ -41,28 +41,34 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 transition-colors duration-300">
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/30 to-purple-600/30 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-pink-400/30 to-blue-600/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse delay-500"></div>
+        </div>
+
         {/* Navigation */}
-        <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40 transition-colors duration-300">
+        <nav className="relative z-40 bg-white/10 dark:bg-black/10 backdrop-blur-xl border-b border-white/20 dark:border-white/10 sticky top-0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Logo */}
+                            {/* Logo */}
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-3"
+                className="flex items-center space-x-3"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <ArrowsRightLeftIcon className="w-6 h-6 text-white" />
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <ArrowsRightLeftIcon className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors duration-300">MultiSwap</h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300">ETHRome Hackathon</p>
-                </div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Multi-Token Swap
+                </h1>
               </motion.div>
 
               {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center gap-8">
+              <div className="hidden md:flex items-center space-x-1">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -71,13 +77,13 @@ export default function Home() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
+                      className={`px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 ${
                         activeTab === tab.id
-                          ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                          ? 'bg-white/20 dark:bg-white/10 text-blue-600 dark:text-blue-400 shadow-lg backdrop-blur-sm'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-4 h-4" />
                       {tab.label}
                     </motion.button>
                   );
@@ -90,19 +96,21 @@ export default function Home() {
                 {!mounted ? (
                   // Placeholder to keep SSR/CSR markup identical on first paint
                   <button
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium opacity-70 cursor-wait"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-xl font-medium opacity-70 cursor-wait backdrop-blur-sm"
                     disabled
                   >
                     Connect Wallet
                   </button>
                 ) : isConnected ? (
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600 dark:text-gray-300 transition-colors duration-300">
-                      {address?.slice(0, 6)}...{address?.slice(-4)}
-                    </span>
+                    <div className="bg-white/20 dark:bg-black/20 backdrop-blur-sm px-3 py-2 rounded-xl border border-white/30 dark:border-white/20">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {address?.slice(0, 6)}...{address?.slice(-4)}
+                      </span>
+                    </div>
                     <button
                       onClick={() => disconnect()}
-                      className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-200 dark:hover:bg-red-800 transition-colors duration-300"
+                      className="bg-red-500/20 backdrop-blur-sm text-red-700 dark:text-red-300 px-3 py-2 rounded-xl text-sm font-medium hover:bg-red-500/30 transition-all duration-300 border border-red-500/30"
                     >
                       Disconnect
                     </button>
@@ -110,7 +118,7 @@ export default function Home() {
                 ) : (
                   <button
                     onClick={() => connect({ connector: connectors[0] })}
-                    className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-300"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg backdrop-blur-sm"
                   >
                     Connect Wallet
                   </button>
@@ -119,7 +127,7 @@ export default function Home() {
                 {/* Mobile Menu Button */}
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
+                  className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-300 bg-white/20 dark:bg-black/20 backdrop-blur-sm rounded-xl"
                 >
                   {isMobileMenuOpen ? (
                     <XMarkIcon className="w-6 h-6" />
@@ -136,7 +144,7 @@ export default function Home() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300"
+                className="md:hidden py-4 border-t border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/10 backdrop-blur-xl"
               >
                 <div className="flex flex-col gap-2">
                   {tabs.map((tab) => {
@@ -150,8 +158,8 @@ export default function Home() {
                         }}
                         className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-left ${
                           activeTab === tab.id
-                            ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                            ? 'bg-white/20 dark:bg-white/10 text-blue-600 dark:text-blue-400 backdrop-blur-sm shadow-lg'
+                            : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/5'
                         }`}
                       >
                         <Icon className="w-5 h-5" />
@@ -166,7 +174,7 @@ export default function Home() {
         </nav>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -174,13 +182,13 @@ export default function Home() {
             transition={{ delay: 0.1 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-300">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Swap Multiple Tokens
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-purple-600 dark:from-primary-400 dark:to-purple-400">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
                 In One Transaction
               </span>
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto transition-colors duration-300">
+            <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
               Experience the future of DeFi with batch swaps and limit orders on Base mainnet. 
               Save on gas fees and time with our innovative multi-token swap protocol.
             </p>

@@ -48,10 +48,10 @@ const SwapRoute: React.FC<SwapRouteProps> = ({
   const toBalance = useTokenBalance(route.to);
 
   return (
-    <div className="relative bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+    <div className="relative bg-white/20 dark:bg-black/20 backdrop-blur-xl rounded-2xl p-4 border border-white/30 dark:border-white/10 shadow-xl">
       {/* Route Header */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors duration-300">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Swap #{index + 1}
         </span>
         {canRemove && (
@@ -59,7 +59,7 @@ const SwapRoute: React.FC<SwapRouteProps> = ({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onRemove}
-            className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200"
+            className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200 hover:bg-red-500/10 rounded-lg"
           >
             <XMarkIcon className="w-5 h-5" />
           </motion.button>
@@ -68,10 +68,10 @@ const SwapRoute: React.FC<SwapRouteProps> = ({
 
       {/* From Token */}
       <div className="space-y-3">
-        <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600 transition-colors duration-300">
+        <div className="bg-white/30 dark:bg-black/30 backdrop-blur-sm rounded-xl p-4 border border-white/40 dark:border-white/20">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors duration-300">From</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">Balance: {fromBalance.isLoading ? '...' : fromBalance.formatted}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">From</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Balance: {fromBalance.isLoading ? '...' : fromBalance.formatted}</span>
           </div>
           <div className="flex items-center gap-3">
             <TokenSelector
@@ -92,17 +92,17 @@ const SwapRoute: React.FC<SwapRouteProps> = ({
             whileHover={{ scale: 1.1, rotate: 180 }}
             whileTap={{ scale: 0.9 }}
             onClick={onSwap}
-            className="p-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-full hover:border-primary-300 dark:hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
+            className="p-3 bg-white/40 dark:bg-black/40 border-2 border-white/50 dark:border-white/30 rounded-full hover:border-blue-400/50 dark:hover:border-blue-500/50 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm"
           >
-            <ArrowsUpDownIcon className="w-5 h-5 text-gray-600 dark:text-gray-300 transition-colors duration-300" />
+            <ArrowsUpDownIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </motion.button>
         </div>
 
         {/* To Token */}
-        <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600 transition-colors duration-300">
+        <div className="bg-white/30 dark:bg-black/30 backdrop-blur-sm rounded-xl p-4 border border-white/40 dark:border-white/20">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors duration-300">To</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">Balance: {toBalance.isLoading ? '...' : toBalance.formatted}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">To</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Balance: {toBalance.isLoading ? '...' : toBalance.formatted}</span>
           </div>
           <div className="flex items-center gap-3">
             <TokenSelector
@@ -114,7 +114,7 @@ const SwapRoute: React.FC<SwapRouteProps> = ({
                 type="text"
                 value={route.to.amount || ''}
                 placeholder="0.0"
-                className="w-full bg-transparent text-right text-lg font-semibold outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
+                className="w-full bg-transparent text-right text-lg font-semibold outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                 readOnly
               />
             </div>

@@ -80,17 +80,17 @@ const SwapInterface: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="card">
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white/20 dark:bg-black/20 backdrop-blur-xl rounded-2xl p-6 border border-white/30 dark:border-white/10 shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">Multi-Token Swap</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 transition-colors duration-300">Execute multiple token swaps in one transaction</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Multi-Token Swap</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Execute multiple token swaps in one transaction</p>
           </div>
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-200"
+            className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/20 dark:hover:bg-white/10 rounded-xl transition-all duration-200 backdrop-blur-sm"
           >
             <Cog6ToothIcon className="w-6 h-6" />
           </button>
@@ -127,7 +127,7 @@ const SwapInterface: React.FC = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl transition-colors duration-300"
+              className="mb-6 p-4 bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 rounded-xl"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -141,8 +141,8 @@ const SwapInterface: React.FC = () => {
                         onClick={() => setSlippage(value)}
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                           slippage === value
-                            ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-md'
-                            : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                            : 'bg-white/20 dark:bg-black/20 text-gray-700 dark:text-gray-300 border border-white/30 dark:border-white/20 hover:bg-white/30 dark:hover:bg-black/30 backdrop-blur-sm'
                         }`}
                       >
                         {value}%
@@ -152,7 +152,7 @@ const SwapInterface: React.FC = () => {
                       type="number"
                       value={slippage}
                       onChange={(e) => setSlippage(Number(e.target.value))}
-                      className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-300"
+                      className="w-20 px-3 py-2 border border-white/30 dark:border-white/20 bg-white/20 dark:bg-black/20 text-gray-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm"
                       step="0.1"
                       min="0.1"
                       max="50"
@@ -293,7 +293,7 @@ const SwapInterface: React.FC = () => {
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={addRoute}
-            className="flex-1 flex items-center justify-center gap-3 py-4 px-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-600 dark:text-gray-400 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-300 group"
+            className="flex-1 flex items-center justify-center gap-3 py-4 px-6 border-2 border-dashed border-white/30 dark:border-white/20 rounded-xl text-gray-600 dark:text-gray-400 hover:border-blue-400/50 dark:hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-500/10 dark:hover:bg-blue-500/10 transition-all duration-300 group backdrop-blur-sm"
           >
             <motion.div
               whileHover={{ rotate: 90 }}
@@ -306,7 +306,7 @@ const SwapInterface: React.FC = () => {
               initial={{ x: 0 }}
               animate={{ x: [0, 4, 0] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              className="text-primary-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             >
               →
             </motion.div>
@@ -316,7 +316,7 @@ const SwapInterface: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-r from-primary-500 to-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg backdrop-blur-sm"
             >
               {routes.length} Routes
             </motion.div>

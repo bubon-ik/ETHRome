@@ -50,12 +50,12 @@ const DarkModeToggle: React.FC = () => {
       className={`
         relative inline-flex items-center justify-center
         w-12 h-12 rounded-xl transition-all duration-300
+        backdrop-blur-sm border shadow-lg
         ${isDarkMode 
-          ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700' 
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          ? 'bg-black/20 text-yellow-400 hover:bg-black/30 border-white/20' 
+          : 'bg-white/20 text-gray-600 hover:bg-white/30 border-white/30'
         }
-        focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
-        ${isDarkMode ? 'focus:ring-offset-gray-900' : 'focus:ring-offset-white'}
+        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-transparent
       `}
       aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
     >
