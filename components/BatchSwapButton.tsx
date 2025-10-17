@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { parseUnits } from 'viem';
+import { parseUnits, formatUnits } from 'viem';
 import { SwapRoute } from '@/types';
 import { useBatchSwap } from '@/hooks/useBatchSwap';
 import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
@@ -105,23 +105,23 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Swap Summary */}
+      {/* Quote Summary */}
       {quotes.length > 0 && (
-        <div className="bg-white/20 dark:bg-black/20 backdrop-blur-sm rounded-xl p-4 border border-white/30 dark:border-white/10">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Swap Summary</h3>
-          <div className="space-y-2">
+        <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 rounded-lg sm:rounded-xl">
+          <h4 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Route Summary</h4>
+          <div className="space-y-1.5 sm:space-y-2">
             {quotes.map((quote, index) => (
-              <div key={index} className="flex justify-between items-center text-sm">
+              <div key={index} className="flex justify-between items-center text-xs sm:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {quote.fromToken.symbol} → {quote.toToken.symbol}
+                  Route #{index + 1}
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {(parseFloat(quote.toAmount) / Math.pow(10, quote.toToken.decimals)).toFixed(4)} {quote.toToken.symbol}
+                  {formatUnits(quote.toAmount, routes[index]?.to.decimals || 18).slice(0, 8)} {routes[index]?.to.symbol}
                 </span>
               </div>
             ))}
-            <div className="pt-2 border-t border-white/20 dark:border-white/10">
-              <div className="flex justify-between items-center text-sm">
+            <div className="pt-1.5 sm:pt-2 border-t border-white/20 dark:border-white/10">
+              <div className="flex justify-between items-center text-xs sm:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Total Gas (est.)</span>
                 <span className="font-medium text-gray-900 dark:text-white">{totalGas} GWEI</span>
               </div>
@@ -129,6 +129,46 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
           </div>
         </div>
       )}
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+          <p className="text-red-700 text-xs sm:text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Success Display */}
+      {isSuccess && txHash && (
+        <div className="bg-green-500/20 border border-green-500/30 rounded-lg sm:rounded-xl p-3 sm:p-4 backdrop-blur-sm">
+          <p className="text-green-700 dark:text-green-300 text-xs sm:text-sm">
+            Batch swap successful! 
+            <a
+              href={`https://basescan.org/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-1 underline hover:no-underline font-medium"
+            >
+              View on BaseScan
+            </a>
+          </p>
+        </div>
+      )}
+
+      {/* Swap Button */}
+      <button
+        onClick={handleSwap}
+        disabled={isDisabled}
+        className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 ${
+          isDisabled
+            ? 'bg-gray-400/20 text-gray-500 cursor-not-allowed backdrop-blur-sm border border-gray-400/30'
+            : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl backdrop-blur-sm'
+        }`}
+      >
+        {isLoading && (
+          <div className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        )}
+        {getButtonText()}
+      </button>
 
       {/* Error Display */}
       {error && (
