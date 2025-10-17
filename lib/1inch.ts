@@ -19,12 +19,22 @@ interface OneInchQuoteParams {
 }
 
 export class OneInchService {
+  private static instance: OneInchService | null = null;
   private apiKey: string;
   private isDemoMode: boolean;
+  private isInitialized: boolean = false;
 
-  constructor(apiKey: string = process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '') {
+  private constructor(apiKey: string = process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '') {
     this.apiKey = apiKey;
     this.isDemoMode = !apiKey || apiKey === 'your_1inch_api_key';
+    this.isInitialized = true;
+  }
+
+  public static getInstance(): OneInchService {
+    if (!OneInchService.instance) {
+      OneInchService.instance = new OneInchService();
+    }
+    return OneInchService.instance;
   }
 
   private async makeRequest(endpoint: string, params?: Record<string, any>) {
@@ -324,4 +334,5 @@ export class OneInchService {
   }
 }
 
-export const oneInchService = new OneInchService();
+// Export singleton instance
+export const oneInchService = OneInchService.getInstance();
