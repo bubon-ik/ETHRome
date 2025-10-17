@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { LimitOrder } from '@/types';
-import { oneInchService } from '@/lib/1inch';
+import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
 
 export interface UseLimitOrdersReturn {
   orders: LimitOrder[];
@@ -33,7 +33,7 @@ export function useLimitOrders(): UseLimitOrdersReturn {
     setError(null);
 
     try {
-      const response = await oneInchService.getLimitOrders(address);
+      const response = await oneInchLimitOrderService.getLimitOrders(address);
       
       // Transform 1inch orders to our LimitOrder format
       const transformedOrders: LimitOrder[] = response.orders?.map((order: any) => ({
@@ -79,7 +79,7 @@ export function useLimitOrders(): UseLimitOrdersReturn {
     setError(null);
 
     try {
-      await oneInchService.createLimitOrder({
+      await oneInchLimitOrderService.createLimitOrder({
         ...params,
         maker: address,
       });
@@ -99,7 +99,7 @@ export function useLimitOrders(): UseLimitOrdersReturn {
     setError(null);
 
     try {
-      await oneInchService.cancelLimitOrder(orderHash);
+      await oneInchLimitOrderService.cancelLimitOrder(orderHash);
       
       // Remove order from local state
       setOrders(prev => prev.filter(order => order.id !== orderHash));
@@ -130,3 +130,5 @@ export function useLimitOrders(): UseLimitOrdersReturn {
     refreshOrders,
   };
 }
+
+

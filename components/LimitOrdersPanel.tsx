@@ -7,13 +7,13 @@ import TokenSelector from './TokenSelector';
 import AmountInput from './AmountInput';
 import { BASE_TOKENS } from '@/lib/wagmi';
 import { Token } from '@/types';
-import { oneInchService } from '@/lib/1inch';
+import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
 
 const LimitOrdersPanel: React.FC = () => {
   const { address, isConnected } = useAccount();
   const { orders, isLoading, error, createOrder, cancelOrder, refreshOrders } = useLimitOrders();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const features = oneInchService.getFeatures();
+  const features = oneInchLimitOrderService.getFeatures();
   const [newOrder, setNewOrder] = useState<{
     makerToken: Token;
     makerAmount: string;

@@ -4,7 +4,7 @@ import { sendCalls } from '@wagmi/core';
 import { config } from '@/lib/wagmi';
 import { parseEther, parseUnits } from 'viem';
 import { BatchSwapParams, SwapRoute } from '@/types';
-import { oneInchService } from '@/lib/1inch';
+import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
 
 export interface UseBatchSwapReturn {
   executeBatchSwap: (params: BatchSwapParams) => Promise<void>;
@@ -53,22 +53,18 @@ export function useBatchSwap(): UseBatchSwapReturn {
           disableEstimate: true,
         };
 
-        const swapData = await oneInchService.getSwapTransaction(swapParams);
+            const swapData = await oneInchLimitOrderService.getSwapTransaction(swapParams);
 
         // Check if token needs approval (skip for ETH)
         if (from.address !== '0x0000000000000000000000000000000000000000') {
-          const allowance = await oneInchService.getAllowance(from.address, address);
-          const requiredAmount = parseUnits(from.amount, from.decimals);
-          
-          if (BigInt(allowance) < requiredAmount) {
-            // Add approval call
-            const approveData = await oneInchService.getApproveTransaction(from.address);
-            calls.push({
-              to: approveData.to as `0x${string}`,
-              data: approveData.data as `0x${string}`,
-              value: BigInt(0),
-            });
-          }
+          // В SDK версии пока пропускаем approve для демо
+          // В реальной версии здесь будет проверка allowance через SDK
+          // Пока добавляем моковый approve call
+          calls.push({
+            to: from.address as `0x${string}`,
+            data: '0x095ea7b30000000000000000000000001111111254eeb25477b68fb85ed929f73a9605820000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
+            value: BigInt(0),
+          });
         }
 
         // Add swap call
@@ -103,3 +99,5 @@ export function useBatchSwap(): UseBatchSwapReturn {
     isSuccess: isSuccess && !!transactionReceipt,
   };
 }
+
+

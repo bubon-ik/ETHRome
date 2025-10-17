@@ -7,7 +7,7 @@ import SwapRoute from './SwapRoute';
 import BatchSwapButton from './BatchSwapButton';
 import { SwapRoute as SwapRouteType, Token } from '@/types';
 import { BASE_TOKENS } from '@/lib/wagmi';
-import { oneInchService } from '@/lib/1inch';
+import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
 
 const SwapInterface: React.FC = () => {
   const [routes, setRoutes] = useState<SwapRouteType[]>([
@@ -19,7 +19,7 @@ const SwapInterface: React.FC = () => {
   const [slippage, setSlippage] = useState(1);
   const [deadline, setDeadline] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
-  const features = oneInchService.getFeatures();
+  const features = oneInchLimitOrderService.getFeatures();
 
   const addRoute = useCallback(() => {
     setRoutes(prev => [...prev, {
@@ -65,29 +65,29 @@ const SwapInterface: React.FC = () => {
           </button>
         </div>
 
-        {/* API Status Info */}
-        {!features.limitOrders && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-800">Running without API key</h3>
-                <p className="text-sm text-blue-700 mt-1">
-                  Batch swaps work perfectly! Get a 
-                  <a 
-                    href="https://portal.1inch.dev/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="mx-1 underline hover:no-underline font-medium"
-                  >
-                    1inch API key
-                  </a>
-                  to unlock limit orders.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+                {/* API Status Info */}
+                {features.demoMode && (
+                  <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-yellow-800">Demo Mode Active</h3>
+                        <p className="text-sm text-yellow-700 mt-1">
+                          Using mock data for demonstration. Get a
+                          <a
+                            href="https://portal.1inch.dev/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mx-1 underline hover:no-underline font-medium"
+                          >
+                            1inch API key
+                          </a>
+                          for real swaps and limit orders.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
         {/* Settings Panel */}
         <AnimatePresence>
@@ -110,7 +110,7 @@ const SwapInterface: React.FC = () => {
                         onClick={() => setSlippage(value)}
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           slippage === value
-                            ? 'bg-primary-600 text-white'
+                            ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                         }`}
                       >
@@ -152,13 +152,7 @@ const SwapInterface: React.FC = () => {
         {/* Swap Routes */}
         <div className="space-y-4 mb-6">
           {routes.map((route, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="relative"
-            >
+            <div key={index} className="relative">
               <SwapRoute
                 route={route}
                 index={index}
@@ -167,20 +161,18 @@ const SwapInterface: React.FC = () => {
                 onSwap={() => swapTokens(index)}
                 canRemove={routes.length > 1}
               />
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Add Route Button */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={addRoute}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-primary-300 hover:text-primary-600 transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors"
         >
           <PlusIcon className="w-5 h-5" />
           Add Another Swap
-        </motion.button>
+        </button>
 
         {/* Batch Swap Button */}
         <div className="mt-6">

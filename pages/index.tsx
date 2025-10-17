@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { motion } from 'framer-motion';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { 
   ArrowsRightLeftIcon, 
   ClockIcon, 
@@ -10,11 +10,20 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import SwapInterface from '@/components/SwapInterface';
+import SimpleSwapInterface from '@/components/SimpleSwapInterface';
 import LimitOrdersPanel from '@/components/LimitOrdersPanel';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'swap' | 'orders' | 'analytics'>('swap');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+
+  // Avoid hydration mismatch: render placeholder until mounted
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const tabs = [
     { id: 'swap', label: 'Swap', icon: ArrowsRightLeftIcon },
@@ -76,7 +85,34 @@ export default function Home() {
 
               {/* Connect Button */}
               <div className="flex items-center gap-4">
-                <ConnectButton />
+                {!mounted ? (
+                  // Placeholder to keep SSR/CSR markup identical on first paint
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium opacity-70 cursor-wait"
+                    disabled
+                  >
+                    Connect Wallet
+                  </button>
+                ) : isConnected ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-600">
+                      {address?.slice(0, 6)}...{address?.slice(-4)}
+                    </span>
+                    <button
+                      onClick={() => disconnect()}
+                      className="bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-200"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => connect({ connector: connectors[0] })}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
+                  >
+                    Connect Wallet
+                  </button>
+                )}
                 
                 {/* Mobile Menu Button */}
                 <button

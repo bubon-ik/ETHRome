@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useAccount, useBalance } from 'wagmi';
-import { parseEther } from 'viem';
+import { useAccount } from 'wagmi';
+import { parseUnits } from 'viem';
 import { SwapRoute } from '@/types';
 import { useBatchSwap } from '@/hooks/useBatchSwap';
-import { oneInchService } from '@/lib/1inch';
+import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
 
 interface BatchSwapButtonProps {
   routes: SwapRoute[];
@@ -17,16 +16,24 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
   slippage,
   deadline,
 }) => {
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
   const { executeBatchSwap, isLoading, error, txHash, isSuccess } = useBatchSwap();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [totalGas, setTotalGas] = useState<string>('0');
   const [isGettingQuotes, setIsGettingQuotes] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Избегаем hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Get quotes for all routes
   useEffect(() => {
     const getQuotes = async () => {
-      if (!routes.every(route => route.from.amount && parseFloat(route.from.amount) > 0)) {
+      if (!routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0)) {
+        setQuotes([]);
+        setTotalGas('0');
         return;
       }
 
@@ -35,8 +42,8 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
         const quotePromises = routes.map(async (route) => {
           if (!route.from.amount || parseFloat(route.from.amount) === 0) return null;
           
-          const amount = parseEther(route.from.amount).toString();
-          return await oneInchService.getQuote({
+          const amount = parseUnits(route.from.amount, route.from.decimals).toString();
+          return await oneInchLimitOrderService.getQuote({
             src: route.from.address,
             dst: route.to.address,
             amount,
@@ -44,15 +51,16 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
         });
 
         const routeQuotes = await Promise.all(quotePromises);
-        setQuotes(routeQuotes.filter(Boolean));
+        const validQuotes = routeQuotes.filter(Boolean);
+        setQuotes(validQuotes);
         
         // Calculate total gas
-        const gas = routeQuotes
-          .filter(Boolean)
-          .reduce((acc, quote) => acc + parseInt(quote?.gas || '0'), 0);
+        const gas = validQuotes.reduce((acc, quote) => acc + parseInt(quote?.gas || '0'), 0);
         setTotalGas((gas / 1e9).toFixed(2)); // Convert to GWEI
       } catch (err) {
         console.error('Failed to get quotes:', err);
+        setQuotes([]);
+        setTotalGas('0');
       } finally {
         setIsGettingQuotes(false);
       }
@@ -62,7 +70,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
   }, [routes]);
 
   const handleSwap = async () => {
-    if (!address || !isConnected) return;
+    if (!address) return;
 
     const validRoutes = routes.filter(
       route => route.from.amount && parseFloat(route.from.amount) > 0
@@ -78,13 +86,15 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
     });
   };
 
-  const isDisabled = !isConnected || 
+  const isDisabled = !mounted || !address || 
     !routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0) ||
     isLoading ||
     isGettingQuotes;
 
   const getButtonText = () => {
-    if (!isConnected) return 'Connect Wallet';
+    // Избегаем hydration mismatch
+    if (!mounted) return 'Loading...';
+    if (!address) return 'Connect Wallet';
     if (isGettingQuotes) return 'Getting Quotes...';
     if (isLoading) return 'Executing Batch Swap...';
     if (!routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0)) {
@@ -145,9 +155,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
       )}
 
       {/* Swap Button */}
-      <motion.button
-        whileHover={!isDisabled ? { scale: 1.02 } : {}}
-        whileTap={!isDisabled ? { scale: 0.98 } : {}}
+      <button
         onClick={handleSwap}
         disabled={isDisabled}
         className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
@@ -160,7 +168,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
           <div className="inline-block w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
         )}
         {getButtonText()}
-      </motion.button>
+      </button>
     </div>
   );
 };
