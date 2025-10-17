@@ -4,7 +4,7 @@ import { sendCalls } from '@wagmi/core';
 import { config } from '@/lib/wagmi';
 import { parseEther, parseUnits } from 'viem';
 import { BatchSwapParams, SwapRoute } from '@/types';
-import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
+import { oneInchService } from '@/lib/1inch';
 
 export interface UseBatchSwapReturn {
   executeBatchSwap: (params: BatchSwapParams) => Promise<void>;
@@ -53,7 +53,7 @@ export function useBatchSwap(): UseBatchSwapReturn {
           disableEstimate: true,
         };
 
-            const swapData = await oneInchLimitOrderService.getSwapTransaction(swapParams);
+            const swapData = await oneInchService.getSwapTransaction(swapParams);
 
         // Check if token needs approval (skip for ETH)
         if (from.address !== '0x0000000000000000000000000000000000000000') {

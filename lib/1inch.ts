@@ -243,71 +243,6 @@ export class OneInchService {
     };
   }
 
-  // Limit Orders functionality (требует API ключ)
-  async createLimitOrder(params: {
-    makerAsset: string;
-    takerAsset: string;
-    makerAmount: string;
-    takerAmount: string;
-    maker: string;
-    receiver?: string;
-  }) {
-    if (this.isDemoMode) {
-      throw new Error('Limit orders require API key. Get one at https://portal.1inch.dev/');
-    }
-
-    const url = new URL(`${ONEINCH_API_URL}/orderbook/v4.0/8453/order`, window.location.origin);
-    const response = await fetch(url.toString(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
-      body: JSON.stringify(params),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`1inch API error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    return response.json();
-  }
-
-  async getLimitOrders(maker?: string, page = 1, limit = 100) {
-    if (this.isDemoMode) {
-      // Возвращаем пустой массив вместо ошибки для демо
-      console.warn('Limit orders require API key. Returning empty array for demo.');
-      return { orders: [] };
-    }
-    
-    const params: Record<string, any> = { page, limit };
-    if (maker) params.maker = maker;
-    
-    return this.makeRequest('/orderbook/v4.0/8453/order/all', params);
-  }
-
-  async cancelLimitOrder(orderHash: string) {
-    if (this.isDemoMode) {
-      throw new Error('Limit orders require API key. Get one at https://portal.1inch.dev/');
-    }
-
-    const url = new URL(`${ONEINCH_API_URL}/orderbook/v4.0/8453/order/${orderHash}`, window.location.origin);
-    const response = await fetch(url.toString(), {
-      method: 'DELETE',
-      headers: {
-        'accept': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`1inch API error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    return response.json();
-  }
-
   // Проверка доступности функций
   hasApiKey(): boolean {
     return !!(this.apiKey && this.apiKey !== 'your_1inch_api_key');
@@ -317,7 +252,7 @@ export class OneInchService {
     return {
       swaps: true,
       quotes: true,
-      limitOrders: this.hasApiKey(),
+      limitOrders: false, // Limit orders disabled
       rateLimit: this.hasApiKey() ? 'High (100 rps)' : 'Demo Mode',
       demoMode: this.isDemoMode,
     };

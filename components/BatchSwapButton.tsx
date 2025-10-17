@@ -3,7 +3,7 @@ import { useAccount } from 'wagmi';
 import { parseUnits } from 'viem';
 import { SwapRoute } from '@/types';
 import { useBatchSwap } from '@/hooks/useBatchSwap';
-import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
+import { oneInchService } from '@/lib/1inch';
 
 interface BatchSwapButtonProps {
   routes: SwapRoute[];
@@ -43,7 +43,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
           if (!route.from.amount || parseFloat(route.from.amount) === 0) return null;
           
           const amount = parseUnits(route.from.amount, route.from.decimals).toString();
-          return await oneInchLimitOrderService.getQuote({
+          return await oneInchService.getQuote({
             src: route.from.address,
             dst: route.to.address,
             amount,
