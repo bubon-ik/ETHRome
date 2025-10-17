@@ -193,22 +193,6 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
           </p>
         </div>
       )}
-
-      {/* Swap Button */}
-      <button
-        onClick={handleSwap}
-        disabled={isDisabled}
-        className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
-          isDisabled
-            ? 'bg-gray-400/20 text-gray-500 cursor-not-allowed backdrop-blur-sm border border-gray-400/30'
-            : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl backdrop-blur-sm'
-        }`}
-      >
-        {isLoading && (
-          <div className="inline-block w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        )}
-        {getButtonText()}
-      </button>
     </div>
   );
 };
