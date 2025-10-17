@@ -5,6 +5,43 @@ import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outlin
 import { motion } from 'framer-motion';
 import { Token } from '@/types';
 import { BASE_TOKENS } from '@/lib/wagmi';
+import { useTokenBalance } from '@/hooks/useTokenBalance';
+
+interface TokenListItemProps {
+  token: Token;
+  onSelect: (token: Token) => void;
+}
+
+const TokenListItem: React.FC<TokenListItemProps> = ({ token, onSelect }) => {
+  const balance = useTokenBalance(token);
+
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => onSelect(token)}
+      className="w-full flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl hover:bg-white/20 dark:hover:bg-white/10 transition-all duration-200 backdrop-blur-sm"
+    >
+      {token.logoURI && (
+        <img
+          src={token.logoURI}
+          alt={token.symbol}
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full"
+        />
+      )}
+      <div className="flex-1 text-left min-w-0">
+        <div className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">{token.symbol}</div>
+        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">{token.name}</div>
+      </div>
+      <div className="text-right">
+        <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+          {balance.isLoading ? '...' : balance.formatted}
+        </div>
+        <div className="text-xs text-gray-600 dark:text-gray-400">$0.00</div>
+      </div>
+    </motion.button>
+  );
+};
 
 interface TokenSelectorProps {
   selectedToken: Token;
@@ -93,29 +130,11 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
                   {/* Token List */}
                   <div className="max-h-64 sm:max-h-80 overflow-y-auto space-y-1.5 sm:space-y-2">
                     {filteredTokens.map((token) => (
-                      <motion.button
+                      <TokenListItem
                         key={token.address}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleSelect(token)}
-                        className="w-full flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl hover:bg-white/20 dark:hover:bg-white/10 transition-all duration-200 backdrop-blur-sm"
-                      >
-                        {token.logoURI && (
-                          <img
-                            src={token.logoURI}
-                            alt={token.symbol}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full"
-                          />
-                        )}
-                        <div className="flex-1 text-left min-w-0">
-                          <div className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">{token.symbol}</div>
-                          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">{token.name}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">0.00</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">$0.00</div>
-                        </div>
-                      </motion.button>
+                        token={token}
+                        onSelect={handleSelect}
+                      />
                     ))}
                   </div>
 

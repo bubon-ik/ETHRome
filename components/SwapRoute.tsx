@@ -85,6 +85,7 @@ const SwapRoute: React.FC<SwapRouteProps> = ({
               value={route.from.amount}
               onChange={updateFromAmount}
               placeholder="0.0"
+              maxValue={fromBalance.rawFormatted}
             />
           </div>
         </div>

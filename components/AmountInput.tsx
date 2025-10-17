@@ -6,6 +6,7 @@ interface AmountInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  maxValue?: string;
 }
 
 const AmountInput: React.FC<AmountInputProps> = ({
@@ -13,6 +14,7 @@ const AmountInput: React.FC<AmountInputProps> = ({
   onChange,
   placeholder = "0.0",
   disabled = false,
+  maxValue = "0",
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -24,8 +26,9 @@ const AmountInput: React.FC<AmountInputProps> = ({
   };
 
   const handleMaxClick = () => {
-    // TODO: Implement max balance functionality
-    onChange('100');
+    if (maxValue && parseFloat(maxValue) > 0) {
+      onChange(maxValue);
+    }
   };
 
   return (
