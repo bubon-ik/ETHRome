@@ -3,14 +3,13 @@ import { useAccount } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import { SwapRoute } from '@/types';
 import { useBatchSwap, type SwapMode } from '@/hooks/useBatchSwap';
-import { fusionService } from '@/lib/1inch-fusion';
+import { OneInchService } from '@/lib/1inch-standard';
 import { formatAmount } from '@/lib/fusion-utils';
 
 interface BatchSwapButtonProps {
   routes: SwapRoute[];
   slippage: number;
   deadline: number;
-  // mode removed - ONLY Fusion (gasless) mode supported
 }
 
 const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
@@ -18,9 +17,11 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
   slippage,
   deadline,
 }) => {
-  // ONLY Fusion (gasless) mode - no mode switching allowed
-  const mode = 'fusion';
+  // Use standard swapping instead of fusion
+  const mode = 'standard';
   const { address } = useAccount();
+  const oneInchService = OneInchService.getInstance();
+  
   const { 
     executeBatchSwap, 
     isLoading, 
@@ -34,15 +35,14 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
   const [totalGas, setTotalGas] = useState<string>('0');
   const [isGettingQuotes, setIsGettingQuotes] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [showFusionInfo, setShowFusionInfo] = useState(false);
-  const [fusionStatus, setFusionStatus] = useState<'loading' | 'working' | 'demo' | 'error'>('loading');
+  const [swapStatus, setSwapStatus] = useState<'loading' | 'working' | 'demo' | 'error'>('loading');
 
   // Избегаем hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Get quotes for all routes using Fusion SDK
+  // Get quotes for all routes using standard 1inch API
   useEffect(() => {
     const getQuotes = async () => {
       if (!routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0)) {
@@ -54,7 +54,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
       setIsGettingQuotes(true);
 
       try {
-        setFusionStatus('working');
+        setSwapStatus('working');
         const routeQuotes = await Promise.all(
           routes
             .filter(route => route.from.amount && parseFloat(route.from.amount) > 0)
@@ -62,40 +62,24 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
               try {
                 const amount = parseUnits(route.from.amount, route.from.decimals || 18);
                 
-                if (mode === 'fusion') {
-                  // Используем Fusion SDK для gasless котировок
-                  const quote = await fusionService.getFusionQuote({
-                    fromTokenAddress: route.from.address || '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    toTokenAddress: route.to.address || '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    amount: amount.toString(),
-                    walletAddress: address || '0x1234567890123456789012345678901234567890'
-                  });
-                  
-                  return {
-                    ...quote,
-                    fromToken: route.from,
-                    toToken: route.to,
-                    fromAmount: amount,
-                    mode: 'fusion'
-                  };
-                } else {
-                  // Стандартная котировка через 1inch API
-                  const response = await fetch(`/api/1inch/quote?chainId=8453&src=${route.from.address}&dst=${route.to.address}&amount=${amount}&includeGas=true`);
-                  if (!response.ok) throw new Error('Quote failed');
-                  
-                  const quote = await response.json();
-                  return {
-                    ...quote,
-                    fromToken: route.from,
-                    toToken: route.to,
-                    fromAmount: amount,
-                    mode: 'standard'
-                  };
-                }
+                // Use standard 1inch API for quotes
+                const quote = await oneInchService.getQuote({
+                  src: route.from.address || '0x0000000000000000000000000000000000000000',
+                  dst: route.to.address || '0x0000000000000000000000000000000000000000',
+                  amount: amount.toString(),
+                });
+                
+                return {
+                  ...quote,
+                  fromToken: route.from,
+                  toToken: route.to,
+                  fromAmount: amount,
+                  mode: 'standard'
+                };
               } catch (err) {
                 console.error('Quote error for route:', err);
-                // Fallback к demo данным
-                setFusionStatus('demo');
+                // Fallback to demo data
+                setSwapStatus('demo');
                 return {
                   toAmount: (BigInt(route.from.amount) * BigInt(95) / BigInt(100)).toString(),
                   fromToken: route.from,
@@ -120,7 +104,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
         
       } catch (error) {
         console.error('Error getting quotes:', error);
-        setFusionStatus('error');
+        setSwapStatus('error');
         setQuotes([]);
         setTotalGas('0');
       } finally {
@@ -156,9 +140,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
     if (!address) return 'Connect Wallet';
     if (isGettingQuotes) return 'Getting Quotes...';
     if (isLoading) {
-      return mode === 'fusion' 
-        ? 'Creating Fusion Orders...'
-        : 'Executing Batch Swap...';
+      return 'Executing Batch Swap...';
     }
     if (!routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0)) {
       return 'Enter Amount';
@@ -189,10 +171,10 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
             <div className="pt-2 border-t border-white/20 dark:border-white/10">
               <div className="flex justify-between items-center text-xs sm:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">
-                  Gas Fee
+                  Estimated Gas
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  FREE ⚡
+                  {totalGas} Gwei
                 </span>
               </div>
             </div>
@@ -200,20 +182,20 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
         </div>
       )}
 
-      {/* Fusion Orders Status */}
+      {/* Transaction Success Status */}
       {fusionOrders.length > 0 && (
         <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4 backdrop-blur-sm">
           <h3 className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
-            ✅ Fusion Orders Created ({fusionOrders.length})
+            ✅ Batch Swap Executed ({fusionOrders.length} routes)
           </h3>
           <div className="space-y-2 text-xs text-green-800 dark:text-green-200">
             {fusionOrders.map((order, index) => (
               <div key={index} className="font-mono bg-green-100/50 dark:bg-green-900/30 p-2 rounded">
-                Order {index + 1}: {order.order.orderHash?.substring(0, 20)}...
+                Route {index + 1}: Completed
               </div>
             ))}
             <p className="text-green-700 dark:text-green-300 text-xs mt-2">
-              Orders submitted! Resolvers will execute them when profitable. No gas fees for you! ⚡
+              All swaps completed successfully! 🎉
             </p>
           </div>
         </div>
@@ -223,7 +205,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
       {isSuccess && txHash && (
         <div className="bg-green-500/20 border border-green-500/30 rounded-lg sm:rounded-xl p-3 sm:p-4 backdrop-blur-sm">
           <p className="text-green-700 dark:text-green-300 text-xs sm:text-sm">
-            ⚡ Fusion Orders Submitted!
+            ✅ Batch Swap Completed!
           </p>
         </div>
       )}

@@ -65,9 +65,11 @@ export class OneInchFusionService {
     try {
       this.apiKey = process.env.NEXT_PUBLIC_ONEINCH_API_KEY || null;
       
-      if (!this.apiKey) {
-        console.warn('⚠️ 1inch API key not found. Using demo mode.');
-        console.log('📝 Get API key at: https://portal.1inch.dev/');
+      // Check if API key is missing or is a placeholder
+      if (!this.apiKey || this.apiKey === 'your_1inch_api_key' || this.apiKey.includes('your_')) {
+        console.warn('⚠️ 1inch API key not configured properly. Using demo mode.');
+        console.log('📝 To use real quotes, get an API key at: https://portal.1inch.dev/');
+        console.log('📝 Then add it to .env.local as NEXT_PUBLIC_ONEINCH_API_KEY=your_actual_key');
         this.isDemoMode = true;
         return;
       }
@@ -107,9 +109,9 @@ export class OneInchFusionService {
     amount: string;
     walletAddress: string;
   }): Promise<SwapQuote> {
-    // Check if SDK is available
-    if (this.isDemoMode || !this.sdk) {
-      console.log('📝 Using demo quote (SDK not available)');
+    // Check if SDK is available or API key is invalid/placeholder
+    if (this.isDemoMode || !this.sdk || this.apiKey === 'your_1inch_api_key' || !this.apiKey) {
+      console.log('📝 Using demo quote (SDK not available or invalid API key)');
       return this.getDemoQuote(params);
     }
 
@@ -194,8 +196,8 @@ export class OneInchFusionService {
       amount: params.amount
     });
     
-    if (this.isDemoMode || !this.sdk) {
-      console.log('📝 Creating demo Fusion order');
+    if (this.isDemoMode || !this.sdk || this.apiKey === 'your_1inch_api_key' || !this.apiKey) {
+      console.log('📝 Creating demo Fusion order (invalid API key or demo mode)');
       return this.createDemoOrder(params);
     }
 
