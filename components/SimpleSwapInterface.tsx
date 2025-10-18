@@ -69,7 +69,7 @@ const SimpleSwapInterface: React.FC = () => {
         {features.demoMode && (
           <div className="mb-6 liquid-glass rounded-2xl p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse-glow"></div>
+              <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
               <div className="flex-1">
                 <h3 className="font-semibold text-yellow-200">Demo Mode Active</h3>
                 <p className="text-sm text-yellow-100/90 mt-1">

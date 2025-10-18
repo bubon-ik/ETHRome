@@ -29,8 +29,8 @@ export default function Home() {
 
   const tabs = [
     { id: 'swap', label: 'Swap', icon: ArrowsRightLeftIcon },
-    { id: 'orders', label: 'Limit Orders', icon: ClockIcon },
-    { id: 'analytics', label: 'Analytics', icon: ChartBarIcon },
+    { id: 'orders', label: 'Limit', icon: ClockIcon },
+    { id: 'analytics', label: 'Profile', icon: ChartBarIcon },
   ] as const;
 
   return (
@@ -43,16 +43,12 @@ export default function Home() {
       </Head>
 
       <div className="min-h-screen relative overflow-hidden">
-        {/* Liquid Orb Background Elements */}
+        {/* Simplified background elements for better performance */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="liquid-orb"></div>
-          <div className="liquid-orb"></div>
-          <div className="liquid-orb"></div>
-          
-          {/* Additional floating elements */}
-          <div className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-gradient-to-br from-blue-500/10 to-transparent blur-2xl floating-element"></div>
-          <div className="absolute bottom-1/4 left-1/4 w-24 h-24 rounded-full bg-gradient-to-br from-purple-500/10 to-transparent blur-2xl floating-element"></div>
-          <div className="absolute top-3/4 right-1/3 w-40 h-40 rounded-full bg-gradient-to-br from-pink-500/10 to-transparent blur-2xl floating-element"></div>
+          {/* Static gradient background instead of animated orbs */}
+          <div className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-gradient-to-br from-blue-500/8 to-transparent blur-2xl"></div>
+          <div className="absolute bottom-1/4 left-1/4 w-24 h-24 rounded-full bg-gradient-to-br from-purple-500/8 to-transparent blur-2xl"></div>
+          <div className="absolute top-3/4 right-1/3 w-40 h-40 rounded-full bg-gradient-to-br from-pink-500/8 to-transparent blur-2xl"></div>
         </div>
 
         {/* Navigation */}
@@ -76,8 +72,8 @@ export default function Home() {
               </motion.div>
 
               {/* Centered Navigation Tabs */}
-              <div className="hidden md:flex items-center justify-center flex-1 max-w-md mx-8">
-                <div className="flex items-center nav-tabs-container rounded-2xl p-1">
+              <div className="hidden md:flex items-center justify-center flex-1 max-w-lg mx-8">
+                <div className="flex items-center nav-tabs-container rounded-2xl p-1 w-full">
                   {tabs.map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -86,14 +82,14 @@ export default function Home() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`nav-tab-button flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-300 flex-1 min-w-0 ${
+                        className={`nav-tab-button flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-medium transition-all duration-300 flex-1 min-w-0 ${
                           activeTab === tab.id
                             ? 'liquid-glass-button text-white shadow-glass'
                             : 'text-gray-600 dark:text-white/70 hover:text-gray-800 dark:hover:text-white hover:bg-glass-white-5'
                         }`}
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
-                        <span className="hidden lg:inline text-sm truncate">{tab.label}</span>
+                        <span className="text-sm whitespace-nowrap">{tab.label}</span>
                       </motion.button>
                     );
                   })}
@@ -265,9 +261,9 @@ export default function Home() {
             className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
           >
             <motion.div 
-              className="liquid-glass-card text-center floating-element"
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.3 }}
+              className="liquid-glass-card text-center"
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="w-16 h-16 liquid-glass rounded-2xl flex items-center justify-center mx-auto mb-4 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/60 to-blue-600/60"></div>
@@ -280,9 +276,9 @@ export default function Home() {
             </motion.div>
 
             <motion.div 
-              className="liquid-glass-card text-center floating-element"
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.3 }}
+              className="liquid-glass-card text-center"
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="w-16 h-16 liquid-glass rounded-2xl flex items-center justify-center mx-auto mb-4 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/60 to-purple-600/60"></div>
@@ -295,9 +291,9 @@ export default function Home() {
             </motion.div>
 
             <motion.div 
-              className="liquid-glass-card text-center floating-element"
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.3 }}
+              className="liquid-glass-card text-center"
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="w-16 h-16 liquid-glass rounded-2xl flex items-center justify-center mx-auto mb-4 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/60 to-green-600/60"></div>

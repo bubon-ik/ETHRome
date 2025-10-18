@@ -47,7 +47,7 @@ const DarkModeToggle: React.FC = () => {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={toggleDarkMode}
-      className="relative inline-flex items-center justify-center w-12 h-12 liquid-glass rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400/50 text-gray-600 dark:text-white/80 hover:text-gray-800 dark:hover:text-white"
+      className="relative inline-flex items-center justify-center w-12 h-12 liquid-glass rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 text-gray-600 dark:text-white/80 hover:text-gray-800 dark:hover:text-white"
       aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       <motion.div
@@ -56,7 +56,7 @@ const DarkModeToggle: React.FC = () => {
           rotate: isDarkMode ? 180 : 0,
           scale: isDarkMode ? 1 : 1
         }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
         className="relative"
       >
         {isDarkMode ? (

@@ -36,43 +36,16 @@ module.exports = {
         '5xl': '100px',
       },
       animation: {
-        'shimmer': 'shimmer 3s ease-in-out infinite',
-        'float': 'float 6s ease-in-out infinite',
-        'float-delayed': 'float 6s ease-in-out infinite -2s',
-        'float-delayed-2': 'float 6s ease-in-out infinite -4s',
-        'gradient-shift': 'gradientShift 4s ease-in-out infinite',
-        'liquid-move': 'liquidMove 20s linear infinite',
-        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
-        'floating-orbs': 'floatingOrbs 20s ease-in-out infinite',
+        'float': 'float 8s ease-in-out infinite',
+        'gradient-shift': 'gradientShift 8s ease-in-out infinite',
       },
       keyframes: {
-        shimmer: {
-          '0%': { left: '-100%' },
-          '100%': { left: '100%' }
-        },
         float: {
           '0%, 100%': { 
-            transform: 'translateY(0px) rotate(0deg)' 
+            transform: 'translateY(0px)' 
           },
-          '33%': { 
-            transform: 'translateY(-20px) rotate(1deg)' 
-          },
-          '66%': { 
-            transform: 'translateY(-10px) rotate(-1deg)' 
-          }
-        },
-        floatingOrbs: {
-          '0%, 100%': {
-            transform: 'translateX(0px) translateY(0px)'
-          },
-          '25%': {
-            transform: 'translateX(10px) translateY(-10px)'
-          },
-          '50%': {
-            transform: 'translateX(-5px) translateY(-20px)'
-          },
-          '75%': {
-            transform: 'translateX(-10px) translateY(-5px)'
+          '50%': { 
+            transform: 'translateY(-10px)' 
           }
         },
         gradientShift: {
@@ -81,24 +54,6 @@ module.exports = {
           },
           '50%': {
             'background-position': '100% 50%'
-          }
-        },
-        liquidMove: {
-          '0%': {
-            transform: 'translateX(0px) translateY(0px) scale(1)',
-            opacity: '0.3'
-          },
-          '33%': {
-            transform: 'translateX(30px) translateY(-30px) scale(1.1)',
-            opacity: '0.4'
-          },
-          '66%': {
-            transform: 'translateX(-20px) translateY(-60px) scale(0.9)',
-            opacity: '0.2'
-          },
-          '100%': {
-            transform: 'translateX(0px) translateY(0px) scale(1)',
-            opacity: '0.3'
           }
         }
       },
