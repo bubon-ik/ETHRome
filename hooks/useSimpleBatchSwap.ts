@@ -88,12 +88,19 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
         slippage: params.slippage,
       }));
 
-      // Получаем batch calls
-      const calls = await simpleSwapService.prepareBatchSwapCalls({
-        swaps: swapParams,
-        walletAddress: address,
-        slippage: params.slippage,
-      });
+      // Определяем, нужен ли batch или одиночный swap
+      let calls;
+      if (swapParams.length === 1) {
+        // Одиночный swap - используем оптимизированную логику
+        calls = await simpleSwapService.prepareSingleSwapCall(swapParams[0]);
+      } else {
+        // Множественные свапы - используем batch логику
+        calls = await simpleSwapService.prepareBatchSwapCalls({
+          swaps: swapParams,
+          walletAddress: address,
+          slippage: params.slippage,
+        });
+      }
 
       setCallsCount(calls.length);
       console.log(`📦 Prepared ${calls.length} batch calls`);
@@ -113,7 +120,6 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
         result = await sendCalls(config, {
           calls,
           account: address,
-          chainId: chain.id,
         });
         console.log('✅ Batch calls sent:', result.id);
       } catch (sendError) {

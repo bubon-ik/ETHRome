@@ -129,6 +129,59 @@ export class SimpleSwapService {
   }
 
   /**
+   * Получить swap транзакцию для batch (без проверки allowance)
+   * Использует реальный 1inch API с правильными параметрами
+   */
+  async getBatchSwapTransaction(params: SwapParams & { slippage?: number }): Promise<SwapTransaction> {
+    console.log('🔄 Getting real batch swap transaction from 1inch API');
+    
+    try {
+      const url = new URL(`${ONEINCH_API_URL}/swap/v5.0/${BASE_CHAIN_ID}/swap`, window.location.origin);
+      url.searchParams.append('src', this.normalizeTokenAddress(params.fromToken.address));
+      url.searchParams.append('dst', this.normalizeTokenAddress(params.toToken.address));
+      url.searchParams.append('amount', parseUnits(params.amount, params.fromToken.decimals).toString());
+      url.searchParams.append('from', params.walletAddress);
+      url.searchParams.append('slippage', (params.slippage || 1).toString());
+      
+      // Добавляем параметр для batch транзакций
+      url.searchParams.append('disableEstimate', 'true');
+      
+      if (params.permit) {
+        url.searchParams.append('permit', params.permit);
+        console.log('🔐 Using permit data for gas optimization');
+      }
+
+      console.log('🔍 Batch swap URL:', url.toString());
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ 1inch API Error:', response.status, errorText);
+        throw new Error(`1inch API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        to: data.tx.to as Address,
+        data: data.tx.data as `0x${string}`,
+        value: BigInt(data.tx.value || '0'),
+        gas: data.tx.gas,
+        gasPrice: data.tx.gasPrice,
+      };
+    } catch (error) {
+      console.error('Failed to get batch swap transaction:', error);
+      throw error; // Не используем демо, пробрасываем ошибку
+    }
+  }
+
+  /**
    * Получить данные транзакции для свапа
    */
   async getSwapTransaction(params: SwapParams & { slippage?: number }): Promise<SwapTransaction> {
@@ -158,7 +211,9 @@ export class SimpleSwapService {
       });
 
       if (!response.ok) {
-        throw new Error(`1inch API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ 1inch API Error:', response.status, errorText);
+        throw new Error(`1inch API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -201,7 +256,9 @@ export class SimpleSwapService {
       });
 
       if (!response.ok) {
-        throw new Error(`1inch API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ 1inch API Error:', response.status, errorText);
+        throw new Error(`1inch API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -237,7 +294,9 @@ export class SimpleSwapService {
       const response = await fetch(url.toString());
 
       if (!response.ok) {
-        throw new Error(`1inch API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ 1inch API Error:', response.status, errorText);
+        throw new Error(`1inch API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -260,7 +319,9 @@ export class SimpleSwapService {
       const response = await fetch(`${window.location.origin}${ONEINCH_API_URL}/swap/v5.2/${BASE_CHAIN_ID}/approve/spender`);
       
       if (!response.ok) {
-        throw new Error(`1inch API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ 1inch API Error:', response.status, errorText);
+        throw new Error(`1inch API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -275,6 +336,60 @@ export class SimpleSwapService {
    * Подготовить batch calls для множественных свапов
    * Оптимизированная версия с минимальными транзакциями
    */
+  /**
+   * Подготовить одиночный swap (без batch)
+   */
+  async prepareSingleSwapCall(params: SwapParams): Promise<BatchSwapCall[]> {
+    const calls: BatchSwapCall[] = [];
+
+    // Если это нативный токен (ETH), просто делаем swap
+    if (this.isNativeToken(params.fromToken.address)) {
+      const swapTx = await this.getSwapTransaction(params);
+      calls.push({
+        to: swapTx.to,
+        data: swapTx.data,
+        value: swapTx.value,
+      });
+      return calls;
+    }
+
+    // Для ERC-20 токенов всегда добавляем approve (если нужен)
+    // В batch транзакции approve выполнится перед swap
+    const allowance = await this.getAllowance(params.fromToken.address, params.walletAddress);
+    const requiredAmount = parseUnits(params.amount, params.fromToken.decimals);
+
+    // Если allowance недостаточно, добавляем approve
+    if (BigInt(allowance) < requiredAmount) {
+      console.log(`💰 Adding approve for ${params.fromToken.address}: ${requiredAmount.toString()}`);
+      console.log(`   Current allowance: ${allowance}, Required: ${requiredAmount.toString()}`);
+      
+      const approveTx = await this.getApproveTransaction(
+        params.fromToken.address,
+        params.amount,
+        params.fromToken.decimals
+      );
+      
+      calls.push({
+        to: approveTx.to,
+        data: approveTx.data,
+        value: approveTx.value,
+      });
+    } else {
+      console.log(`✅ Sufficient allowance for ${params.fromToken.address}: ${allowance}`);
+    }
+
+    // Добавляем swap (используем batch метод, так как approve уже добавлен)
+    const swapTx = await this.getBatchSwapTransaction(params);
+    calls.push({
+      to: swapTx.to,
+      data: swapTx.data,
+      value: swapTx.value,
+    });
+
+    console.log(`📦 Prepared ${calls.length} calls for single swap`);
+    return calls;
+  }
+
   async prepareBatchSwapCalls(params: {
     swaps: SwapParams[];
     walletAddress: string;
@@ -302,10 +417,15 @@ export class SimpleSwapService {
       if (BigInt(allowance) < amount) {
         console.log(`💰 Adding approve for ${tokenAddress}: ${amount.toString()}`);
         
+        // Находим правильные decimals для токена
+        const tokenDecimals = params.swaps.find(swap => 
+          swap.fromToken.address.toLowerCase() === tokenAddress.toLowerCase()
+        )?.fromToken.decimals || 18;
+        
         const approveTx = await this.getApproveTransaction(
           tokenAddress,
           amount.toString(),
-          18 // Используем 18 decimals для approve
+          tokenDecimals
         );
         
         calls.push({
@@ -316,9 +436,9 @@ export class SimpleSwapService {
       }
     }
 
-    // 3. Добавляем все swap транзакции
+    // 3. Добавляем все swap транзакции (используем batch метод)
     for (const swap of params.swaps) {
-      const swapTx = await this.getSwapTransaction({
+      const swapTx = await this.getBatchSwapTransaction({
         ...swap,
         walletAddress: params.walletAddress,
         slippage: params.slippage,
