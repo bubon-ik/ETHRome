@@ -5,15 +5,28 @@ import { Address } from 'viem';
 const BASE_CHAIN_ID = 8453; // Base mainnet
 
 export class OneInchSDKService {
+  private static instance: OneInchSDKService | null = null;
   private sdk: FusionSDK | null = null;
   private isDemoMode: boolean = true;
+  private isInitialized: boolean = false;
 
-  constructor() {
-    // Инициализируем SDK (пока в демо-режиме)
-    this.initializeSDK();
+  private constructor() {
+    // Private constructor to prevent direct instantiation
+  }
+
+  public static getInstance(): OneInchSDKService {
+    if (!OneInchSDKService.instance) {
+      OneInchSDKService.instance = new OneInchSDKService();
+      OneInchSDKService.instance.initializeSDK();
+    }
+    return OneInchSDKService.instance;
   }
 
   private initializeSDK() {
+    if (this.isInitialized) {
+      return; // Prevent multiple initializations
+    }
+    
     try {
       // SDK НЕ требует API ключ! Но пока используем демо-режим
       // В реальном проекте здесь будет правильная инициализация SDK
@@ -22,10 +35,12 @@ export class OneInchSDKService {
       this.isDemoMode = true; // Пока демо, но концепция правильная
       this.sdk = null; // Не создаем SDK пока не разберемся с API
       console.log('1inch SDK concept: NO API KEY NEEDED for limit orders!');
+      this.isInitialized = true;
     } catch (error) {
       console.warn('Failed to initialize 1inch SDK, using demo mode:', error);
       this.isDemoMode = true;
       this.sdk = null;
+      this.isInitialized = true;
     }
   }
 
@@ -216,4 +231,5 @@ export class OneInchSDKService {
   }
 }
 
-export const oneInchSDKService = new OneInchSDKService();
+// Export singleton instance
+export const oneInchSDKService = OneInchSDKService.getInstance();

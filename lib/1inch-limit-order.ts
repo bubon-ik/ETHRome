@@ -13,14 +13,28 @@ import {
 const BASE_CHAIN_ID = 8453; // Base mainnet
 
 export class OneInchLimitOrderService {
+  private static instance: OneInchLimitOrderService | null = null;
   private api: Api | null = null;
   private isDemoMode: boolean = true;
+  private isInitialized: boolean = false;
 
-  constructor() {
-    this.initializeAPI();
+  private constructor() {
+    // Private constructor to prevent direct instantiation
+  }
+
+  public static getInstance(): OneInchLimitOrderService {
+    if (!OneInchLimitOrderService.instance) {
+      OneInchLimitOrderService.instance = new OneInchLimitOrderService();
+      OneInchLimitOrderService.instance.initializeAPI();
+    }
+    return OneInchLimitOrderService.instance;
   }
 
   private initializeAPI() {
+    if (this.isInitialized) {
+      return; // Prevent multiple initializations
+    }
+    
     try {
       // API класс требует authKey для работы с 1inch API
       const apiKey = process.env.NEXT_PUBLIC_ONEINCH_API_KEY;
@@ -39,10 +53,13 @@ export class OneInchLimitOrderService {
         this.api = null;
         console.log('1inch Limit Order SDK in demo mode - API key required for full functionality');
       }
+      
+      this.isInitialized = true; // Mark as initialized
     } catch (error) {
       console.warn('Failed to initialize 1inch Limit Order SDK, using demo mode:', error);
       this.isDemoMode = true;
       this.api = null;
+      this.isInitialized = true; // Mark as initialized even on error
     }
   }
 
@@ -311,4 +328,5 @@ export class OneInchLimitOrderService {
   }
 }
 
-export const oneInchLimitOrderService = new OneInchLimitOrderService();
+// Export singleton instance
+export const oneInchLimitOrderService = OneInchLimitOrderService.getInstance();
