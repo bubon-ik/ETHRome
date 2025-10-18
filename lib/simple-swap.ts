@@ -411,7 +411,8 @@ export class SimpleSwapService {
     }
 
     // 2. Добавляем один approve для каждого токена (если нужен)
-    for (const [tokenAddress, amount] of tokenApprovals) {
+    for (const tokenApprovalEntry of Array.from(tokenApprovals.entries())) {
+      const [tokenAddress, amount] = tokenApprovalEntry;
       const allowance = await this.getAllowance(tokenAddress, params.walletAddress);
       
       if (BigInt(allowance) < amount) {

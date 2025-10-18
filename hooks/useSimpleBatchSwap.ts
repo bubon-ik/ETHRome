@@ -159,7 +159,7 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
         // Проверяем все возможные успешные статусы
         const successStatuses = ['CONFIRMED', 'success', 'SUCCESS', 'completed'];
         
-        if (successStatuses.includes(status.status)) {
+        if (status.status && successStatuses.includes(status.status)) {
           setIsSuccess(true);
           // Получаем реальный tx hash из статуса
           if (status.receipts && status.receipts.length > 0) {

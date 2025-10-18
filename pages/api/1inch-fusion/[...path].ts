@@ -36,15 +36,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🔑 API Key length:', process.env.NEXT_PUBLIC_ONEINCH_API_KEY?.length || 0);
 
     // Делаем запрос к 1inch API
+    const requestHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ONEINCH_API_KEY}`,
+      'X-API-Key': process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '',
+      'apikey': process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '', // Альтернативный заголовок
+    };
+
+    // Add any additional headers
+    if (headers) {
+      Object.assign(requestHeaders, headers);
+    }
+
     const response = await fetch(targetUrl, {
       method: method || 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ONEINCH_API_KEY}`,
-        'X-API-Key': process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '',
-        'apikey': process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '', // Альтернативный заголовок
-        ...headers,
-      },
+      headers: requestHeaders,
       body: body ? JSON.stringify(body) : undefined,
     });
 

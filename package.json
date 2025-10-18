@@ -22,7 +22,6 @@
   "license": "MIT",
   "description": "Multi-token swap protocol with batch transactions and limit orders on Base",
   "dependencies": {
-    "@1inch/fusion-sdk": "^2.1.12-rc.0",
     "@1inch/limit-order-sdk": "^5.2.2",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
@@ -31,9 +30,7 @@
     "@types/node": "^24.5.2",
     "@types/react": "^19.1.14",
     "@types/react-dom": "^19.1.9",
-    "axios": "^1.12.2",
     "framer-motion": "^12.23.22",
-    "lucide-react": "^0.544.0",
     "next": "^15.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

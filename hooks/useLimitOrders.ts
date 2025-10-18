@@ -79,13 +79,19 @@ export function useLimitOrders(): UseLimitOrdersReturn {
     setError(null);
 
     try {
-      await oneInchLimitOrderService.createLimitOrder({
-        ...params,
-        maker: address,
-      });
+      // Note: Signature generation is not implemented yet
+      // For now, we'll throw an error to inform the user
+      throw new Error('Limit order signature generation is not implemented yet. This feature requires a wallet signature to create orders.');
+
+      // TODO: Implement signature generation
+      // await oneInchLimitOrderService.createLimitOrder({
+      //   ...params,
+      //   maker: address,
+      //   signature: '', // This needs to be generated using wallet
+      // });
 
       // Refresh orders after creating
-      await fetchOrders();
+      // await fetchOrders();
     } catch (err) {
       console.error('Failed to create limit order:', err);
       setError(err instanceof Error ? err.message : 'Failed to create order');
