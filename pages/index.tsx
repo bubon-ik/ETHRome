@@ -7,7 +7,8 @@ import {
   ClockIcon, 
   ChartBarIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import SwapInterface from '@/components/SwapInterface';
 import SimpleSwapInterface from '@/components/SimpleSwapInterface';
@@ -32,6 +33,10 @@ export default function Home() {
     { id: 'orders', label: 'Limit Orders', icon: ClockIcon },
     { id: 'analytics', label: 'Analytics', icon: ChartBarIcon },
   ] as const;
+
+  const handleTokenSearchClick = () => {
+    window.open('/token-search-demo', '_blank');
+  };
 
   return (
     <>
@@ -90,6 +95,18 @@ export default function Home() {
                     </motion.button>
                   );
                 })}
+                
+                {/* Token Search Demo Button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleTokenSearchClick}
+                  className="px-3 lg:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5"
+                  title="Token Search Demo"
+                >
+                  <MagnifyingGlassIcon className="w-4 h-4" />
+                  <span className="hidden lg:inline">Token Search</span>
+                </motion.button>
               </div>
 
               {/* Connect Button and Dark Mode Toggle */}
@@ -173,6 +190,18 @@ export default function Home() {
                       </button>
                     );
                   })}
+                  
+                  {/* Token Search Demo Button */}
+                  <button
+                    onClick={() => {
+                      handleTokenSearchClick();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-left text-sm sm:text-base text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/5"
+                  >
+                    <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    Token Search Demo
+                  </button>
                 </div>
               </motion.div>
             )}

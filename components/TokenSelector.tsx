@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import { Token } from '@/types';
+import { Token, TokenSearchResult } from '@/types';
 import { BASE_TOKENS } from '@/lib/wagmi';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
+import { useTokenSearch } from '@/hooks/useTokenSearch';
 
 interface TokenListItemProps {
   token: Token;
@@ -51,16 +52,88 @@ interface TokenSelectorProps {
 const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [allTokens, setAllTokens] = useState<Token[]>(BASE_TOKENS);
+  const [searchResults, setSearchResults] = useState<Token[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const filteredTokens = BASE_TOKENS.filter(token =>
-    token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    token.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { searchTokens, getAllTokensInfo, isLoading } = useTokenSearch();
+
+  // Загружаем все токены при открытии модального окна
+  useEffect(() => {
+    if (isOpen && allTokens.length === BASE_TOKENS.length) {
+      loadAllTokens();
+    }
+  }, [isOpen]);
+
+  // Поиск токенов при изменении запроса
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      performSearch();
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
+  const loadAllTokens = async () => {
+    console.log('Loading all tokens...');
+    try {
+      const tokens = await getAllTokensInfo({ chainId: 8453 });
+      const convertedTokens: Token[] = tokens.map(token => ({
+        address: token.address,
+        symbol: token.symbol,
+        name: token.name,
+        decimals: token.decimals,
+        chainId: 8453,
+        logoURI: token.logoURI
+      }));
+      setAllTokens([...BASE_TOKENS, ...convertedTokens]);
+    } catch (error) {
+      console.error('Failed to load tokens:', error);
+    }
+  };
+
+  const performSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      console.log('Searching for:', searchQuery);
+      const results = await searchTokens({
+        query: searchQuery,
+        chainId: 8453,
+        limit: 20,
+        ignoreListed: false
+      });
+      
+      console.log('Search results:', results);
+      
+      const convertedTokens: Token[] = results.map(token => ({
+        address: token.address,
+        symbol: token.symbol,
+        name: token.name,
+        decimals: token.decimals,
+        chainId: 8453,
+        logoURI: token.logoURI
+      }));
+      
+      console.log('Converted tokens:', convertedTokens);
+      setSearchResults(convertedTokens);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Определяем какие токены показывать
+  const displayTokens = searchQuery.trim() ? searchResults : allTokens;
 
   const handleSelect = (token: Token) => {
     onSelect(token);
     setIsOpen(false);
     setSearchQuery('');
+    setSearchResults([]);
   };
 
   return (
@@ -129,18 +202,25 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
 
                   {/* Token List */}
                   <div className="max-h-64 sm:max-h-80 overflow-y-auto space-y-1.5 sm:space-y-2">
-                    {filteredTokens.map((token) => (
-                      <TokenListItem
-                        key={token.address}
-                        token={token}
-                        onSelect={handleSelect}
-                      />
-                    ))}
+                    {(isLoading || isSearching) ? (
+                      <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400 transition-colors duration-300 text-sm sm:text-base">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                        {searchQuery.trim() ? 'Searching tokens...' : 'Loading tokens...'}
+                      </div>
+                    ) : (
+                      displayTokens.map((token) => (
+                        <TokenListItem
+                          key={token.address}
+                          token={token}
+                          onSelect={handleSelect}
+                        />
+                      ))
+                    )}
                   </div>
 
-                  {filteredTokens.length === 0 && (
+                  {!isLoading && !isSearching && displayTokens.length === 0 && (
                     <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400 transition-colors duration-300 text-sm sm:text-base">
-                      No tokens found
+                      {searchQuery.trim() ? 'No tokens found' : 'No tokens available'}
                     </div>
                   )}
                 </Dialog.Panel>

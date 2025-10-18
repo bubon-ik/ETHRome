@@ -68,5 +68,45 @@ export interface NetworkConfig {
   };
 }
 
+// 1inch Token API types
+export interface TokenSearchResult {
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  logoURI?: string;
+  tags?: string[];
+  verified?: boolean;
+}
+
+export interface TokenSearchResponse {
+  tokens: TokenSearchResult[];
+}
+
+export interface TokenInfoResponse {
+  [address: string]: TokenSearchResult;
+}
+
+export interface TokenListResponse {
+  tokens: TokenSearchResult[];
+}
+
+export interface TokenSearchParams {
+  query: string;
+  chainId: number;
+  limit?: number;
+  ignoreListed?: boolean;
+}
+
+export interface TokenInfoParams {
+  chainId: number;
+  addresses: string[];
+}
+
+export interface TokenListParams {
+  chainId: number;
+  provider?: string;
+}
+
 
 
