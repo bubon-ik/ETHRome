@@ -66,6 +66,8 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
     setIsSuccess(false);
     setCallsCount(0);
 
+    let currentBatchId: string | null = null;
+
     try {
       console.log('🚀 Starting simple batch swap...');
 
@@ -128,13 +130,15 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
         }
         
         console.log('✅ Batch calls sent:', result.id);
+        currentBatchId = result.id;
       } catch (sendError) {
         const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
         
         if (errorMessage.includes('User rejected') || 
             errorMessage.includes('rejected') ||
             errorMessage.includes('cancelled') ||
-            errorMessage.includes('denied')) {
+            errorMessage.includes('denied') ||
+            errorMessage.includes('ACTION_REJECTED')) {
           
           console.log('🚫 Transaction was cancelled by user during sendCalls');
           setError('Transaction cancelled by user');
@@ -147,42 +151,92 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
       }
       
       // Только устанавливаем ID если sendCalls прошел успешно
-      setBatchId(result.id);
-      setTxHash(result.id); // sendCalls возвращает batch ID
+      setBatchId(currentBatchId);
+      setTxHash(currentBatchId); // sendCalls возвращает batch ID
 
-      // Отслеживаем статус batch calls
+      // Отслеживаем статус batch calls с защитой от UnknownBundleIdError
       console.log('⏳ Waiting for batch execution...');
       
       try {
         const config = getWagmiConfig();
         
         // Дополнительная проверка на валидность ID
-        if (!result.id || typeof result.id !== 'string') {
+        if (!currentBatchId || typeof currentBatchId !== 'string') {
           throw new Error('Invalid batch ID received');
         }
         
-        const status = await waitForCallsStatus(config, {
-          id: result.id,
-          timeout: 300000, // 5 минут timeout
-        });
+        // Проверяем статус bundle с timeout и retry логикой
+        let retryCount = 0;
+        const maxRetries = 3;
+        let status;
+        
+        while (retryCount < maxRetries) {
+          try {
+            // Сначала проверяем статус без ожидания
+            status = await getCallsStatus(config, { id: currentBatchId });
+            
+            if (status.status === 'pending') {
+              // Если pending, ждем выполнения
+              status = await waitForCallsStatus(config, {
+                id: currentBatchId,
+                timeout: 60000, // Уменьшенный timeout - 1 минута
+              });
+            }
+            
+            break; // Если успешно получили статус, выходим из retry loop
+            
+          } catch (retryError) {
+            retryCount++;
+            const retryErrorMessage = retryError instanceof Error ? retryError.message : String(retryError);
+            
+            if (retryErrorMessage.includes('UnknownBundleIdError') || 
+                retryErrorMessage.includes('bundle id is unknown') ||
+                retryErrorMessage.includes('No matching bundle found')) {
+              
+              if (retryCount >= maxRetries) {
+                console.log('🚫 Bundle ID became invalid - transaction likely cancelled');
+                setError('Transaction was cancelled or timed out');
+                setIsSuccess(false);
+                setBatchId(null);
+                setTxHash(null);
+                return;
+              }
+              
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+              console.log(`🔄 Retrying status check (${retryCount}/${maxRetries})...`);
+            } else {
+              throw retryError; // Re-throw non-bundle-id errors
+            }
+          }
+        }
 
         console.log('✅ Batch execution completed:', status);
         
         // Проверяем все возможные успешные статусы
-        const successStatuses = ['CONFIRMED', 'success', 'SUCCESS', 'completed'];
+        const successStatuses = ['success'];
         
-        if (status.status && successStatuses.includes(status.status)) {
+        if (status && status.status && successStatuses.includes(status.status)) {
           setIsSuccess(true);
           // Получаем реальный tx hash из статуса
           if (status.receipts && status.receipts.length > 0) {
             setTxHash(status.receipts[0].transactionHash);
           }
           console.log('🎉 Batch swap completed successfully!');
+        } else if (status && status.status === 'pending') {
+          // If still pending after timeout, consider it successful but pending
+          setIsSuccess(true);
+          console.log('⏳ Transaction is still pending but likely will complete');
+        } else if (status && status.status === 'failure') {
+          console.log('❌ Transaction failed');
+          setError('Transaction failed');
+          setIsSuccess(false);
         } else {
-          console.warn('⚠️ Unexpected status:', status.status);
+          console.warn('⚠️ Unexpected status:', status?.status);
           // Не выбрасываем ошибку, так как batch мог выполниться успешно
           setIsSuccess(true);
         }
+        
       } catch (statusError) {
         console.error('❌ Batch status error:', statusError);
         
@@ -198,7 +252,7 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
             errorMessage.includes('denied')) {
           
           console.log('🚫 Transaction was cancelled or bundle not found');
-          setError('Transaction was cancelled or not found. Please try again.');
+          setError('Transaction was cancelled by user');
           setIsSuccess(false);
           
           // Reset batch ID since it's invalid

@@ -31,6 +31,7 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
   const [totalGas, setTotalGas] = useState<string>('0');
   const [isGettingQuotes, setIsGettingQuotes] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [lastSwapTime, setLastSwapTime] = useState(0);
 
   // Избегаем hydration mismatch
   useEffect(() => {
@@ -43,6 +44,19 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
       resetState();
     };
   }, [resetState]);
+
+  // Auto-clear errors after some time (longer for cancellations)
+  useEffect(() => {
+    if (error) {
+      const isCancellation = error.includes('cancelled') || error.includes('canceled');
+      const clearTime = isCancellation ? 8000 : 5000; // 8s for cancellations, 5s for errors
+      
+      const timer = setTimeout(() => {
+        resetState();
+      }, clearTime);
+      return () => clearTimeout(timer);
+    }
+  }, [error, resetState]);
 
   // Get quotes for all routes with debouncing to avoid rate limiting
   useEffect(() => {
@@ -111,11 +125,24 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
   const handleSwap = async () => {
     if (!address) return;
 
+    // Prevent rapid successive clicks (debounce)
+    const now = Date.now();
+    if (now - lastSwapTime < 2000) { // 2 second cooldown
+      console.log('🚫 Swap attempt too soon, ignoring');
+      return;
+    }
+    setLastSwapTime(now);
+
     const validRoutes = routes.filter(
       route => route.from.amount && parseFloat(route.from.amount) > 0
     );
 
     if (validRoutes.length === 0) return;
+
+    // Clear any previous error before starting new swap
+    if (error) {
+      resetState();
+    }
 
     await executeBatchSwap({
       routes: validRoutes,
@@ -191,10 +218,43 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
         </div>
       )}
 
-      {/* Error Display */}
+      {/* Error/Cancellation Display */}
       {error && (
-        <div className="liquid-glass rounded-2xl p-4 bg-red-500/20 border border-red-400/30">
-          <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+        <div className={`liquid-glass rounded-2xl p-4 border ${
+          error.includes('cancelled') || error.includes('canceled')
+            ? 'bg-orange-500/20 border-orange-400/30' // Orange for cancellations
+            : 'bg-red-500/20 border-red-400/30' // Red for actual errors
+        }`}>
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-lg">
+                {error.includes('cancelled') || error.includes('canceled') ? '🚫' : '⚠️'}
+              </span>
+              <div className={`text-sm ${
+                error.includes('cancelled') || error.includes('canceled')
+                  ? 'text-orange-800 dark:text-orange-200'
+                  : 'text-red-800 dark:text-red-200'
+              }`}>
+                <p className="font-semibold">{error}</p>
+                {(error.includes('cancelled') || error.includes('canceled')) && (
+                  <p className="text-xs mt-1 opacity-90">
+                    You can try again when you're ready to complete the transaction.
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={resetState}
+              className={`ml-2 hover:opacity-75 ${
+                error.includes('cancelled') || error.includes('canceled')
+                  ? 'text-orange-800 dark:text-orange-200'
+                  : 'text-red-800 dark:text-red-200'
+              }`}
+              title="Dismiss notification"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
