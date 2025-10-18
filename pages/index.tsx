@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { motion } from 'framer-motion';
 import { useAccount, useConnect, useDisconnect, useEnsName, useEnsAvatar } from 'wagmi';
-import { base, sepolia } from 'wagmi/chains';
+import { base, mainnet, sepolia } from 'wagmi/chains';
 import {
   ArrowsRightLeftIcon,
   ClockIcon,
@@ -15,6 +15,7 @@ import SwapInterface from '@/components/SwapInterface';
 import LimitOrdersPanel from '@/components/LimitOrdersPanel';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import PortfolioView from '@/components/PortfolioView';
+import { useEnsNameOptimistic } from '@/hooks/useEnsNameOptimistic';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'swap' | 'orders' | 'analytics'>('swap');
@@ -25,9 +26,10 @@ export default function Home() {
   const { disconnect } = useDisconnect();
 
   // Get ENS name from Base
-  const { data: baseEnsName, isLoading: isLoadingBaseEns } = useEnsName({
+  const { data: mainnetEnsName, isLoading: isLoadingBaseEns } = useEnsNameOptimistic({
     address,
-    chainId: base.id,
+    l1ChainId: mainnet.id,
+    l2ChainId: base.id,
   });
 
   // Get ENS name from Sepolia testnet
@@ -45,8 +47,8 @@ export default function Home() {
 
   // Get ENS avatar from Base - only if we have a name
   const { data: baseEnsAvatar } = useEnsAvatar({
-    name: baseEnsName ?? undefined,
-    chainId: base.id,
+    name: mainnetEnsName ?? undefined,
+    chainId: mainnet.id,
   });
 
   // Get ENS avatar from Sepolia testnet - only if we have a name
@@ -66,7 +68,7 @@ export default function Home() {
 
   // Use the first available ENS name (filter out null values)
   // Since we know the user has a Sepolia ENS name, prioritize that
-  let ensName = sepoliaEnsName || baseEnsName || null;
+  let ensName = mainnetEnsName || sepoliaEnsName || null;
 
   // Process avatar URL to handle various formats (IPFS, Arweave, HTTP, etc.)
   const processAvatarUrl = (url: string | null): string | null => {
@@ -106,7 +108,7 @@ export default function Home() {
   useEffect(() => {
     if (mounted && address) {
       console.log('Wallet address:', address);
-      console.log('Base ENS name:', baseEnsName);
+      console.log('Base ENS name:', mainnetEnsName);
       console.log('Sepolia ENS name:', sepoliaEnsName);
       console.log('ENS Avatar (processed):', ensAvatar);
       console.log('Original Base ENS Avatar:', baseEnsAvatar);
@@ -128,7 +130,7 @@ export default function Home() {
         }
       }
     }
-  }, [mounted, address, baseEnsName, sepoliaEnsName, ensAvatar, baseEnsAvatar, sepoliaEnsAvatar, avatarLoaded, avatarError, isLoadingBaseEns, isLoadingSepoliaEns]);
+  }, [mounted, address, mainnetEnsName, sepoliaEnsName, ensAvatar, baseEnsAvatar, sepoliaEnsAvatar, avatarLoaded, avatarError, isLoadingBaseEns, isLoadingSepoliaEns]);
 
   const tabs = [
     { id: 'swap', label: 'Swap', icon: ArrowsRightLeftIcon },
