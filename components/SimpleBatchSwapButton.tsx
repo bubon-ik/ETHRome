@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useEnsAddress } from 'wagmi';
+import { mainnet } from 'viem/chains';
 import { parseUnits, isAddress } from 'viem';
 import { SwapRoute } from '@/types';
 import { useSimpleBatchSwap } from '@/hooks/useSimpleBatchSwap';
 import { simpleSwapService } from '@/lib/simple-swap';
 import { UserIcon } from '@heroicons/react/24/outline';
-import { useBaseEnsAddress } from '@/hooks/useBaseEns';
 
 interface SimpleBatchSwapButtonProps {
     routes: SwapRoute[];
@@ -37,12 +37,12 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
     const [recipientInput, setRecipientInput] = useState<string>('');
     const [showRecipientField, setShowRecipientField] = useState(false);
 
-    const isEnsName = recipientInput.endsWith('.eth');
+    const isEnsName = recipientInput.includes('.');
     const {
         data: resolvedAddress,
         isLoading: isResolvingEns,
         error: ensError
-    } = useBaseEnsAddress(recipientInput);    // Избегаем hydration mismatch
+    } = useEnsAddress({ name: recipientInput, chainId: mainnet.id });    // Избегаем hydration mismatch
     useEffect(() => {
         setMounted(true);
     }, []);
