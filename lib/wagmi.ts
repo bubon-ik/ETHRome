@@ -45,7 +45,7 @@ export const BASE_TOKENS = [
     name: 'USD Coin',
     decimals: 6,
     chainId: base.id,
-    logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86a33E6417aA5B95d5e93C72f442f80040f9a/logo.png'
+    logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/assets/0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913/logo.png'
   },
   {
     address: '0x4200000000000000000000000000000000000006',

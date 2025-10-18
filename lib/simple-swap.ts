@@ -1,7 +1,7 @@
 /**
  * Simple Swap Service - без Fusion SDK
  * Использует обычный 1inch API + wagmi sendCalls для batch свапов
- * 
+ *
  * @see https://wagmi.sh/core/api/actions/sendCalls
  */
 
@@ -46,7 +46,7 @@ export class SimpleSwapService {
   constructor(apiKey: string = process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '') {
     this.apiKey = apiKey;
     this.isDemoMode = !apiKey || apiKey === 'your_1inch_api_key';
-    
+
     console.log('🔑 SimpleSwapService initialized:');
     console.log('  API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT SET');
     console.log('  Demo Mode:', this.isDemoMode);
@@ -93,20 +93,20 @@ export class SimpleSwapService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        
+
         // Handle rate limiting specifically
         if (response.status === 429) {
           console.warn('⚠️ Rate limit exceeded, please slow down requests');
           throw new Error('Rate limit exceeded. Please wait a moment and try again.');
         }
-        
+
         console.error('❌ API Error:', response.status, errorText);
         throw new Error(`1inch API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
       console.log('✅ Quote received:', data);
-      
+
       // 1inch API возвращает данные в другом формате
       return {
         fromToken: {
@@ -141,7 +141,7 @@ export class SimpleSwapService {
    */
   async getBatchSwapTransaction(params: SwapParams & { slippage?: number }): Promise<SwapTransaction> {
     console.log('🔄 Getting real batch swap transaction from 1inch API');
-    
+
     try {
       const url = new URL(`${ONEINCH_API_URL}/swap/v5.0/${BASE_CHAIN_ID}/swap`, window.location.origin);
       url.searchParams.append('src', this.normalizeTokenAddress(params.fromToken.address));
@@ -149,10 +149,10 @@ export class SimpleSwapService {
       url.searchParams.append('amount', parseUnits(params.amount, params.fromToken.decimals).toString());
       url.searchParams.append('from', params.walletAddress);
       url.searchParams.append('slippage', (params.slippage || 1).toString());
-      
+
       // Добавляем параметр для batch транзакций
       url.searchParams.append('disableEstimate', 'true');
-      
+
       if (params.permit) {
         url.searchParams.append('permit', params.permit);
         console.log('🔐 Using permit data for gas optimization');
@@ -174,7 +174,7 @@ export class SimpleSwapService {
       }
 
       const data = await response.json();
-      
+
       return {
         to: data.tx.to as Address,
         data: data.tx.data as `0x${string}`,
@@ -203,7 +203,7 @@ export class SimpleSwapService {
       url.searchParams.append('amount', parseUnits(params.amount, params.fromToken.decimals).toString());
       url.searchParams.append('from', params.walletAddress);
       url.searchParams.append('slippage', (params.slippage || 1).toString());
-      
+
       // Добавляем permit данные если есть
       if (params.permit) {
         url.searchParams.append('permit', params.permit);
@@ -224,7 +224,7 @@ export class SimpleSwapService {
       }
 
       const data = await response.json();
-      
+
       return {
         to: data.tx.to as Address,
         data: data.tx.data as `0x${string}`,
@@ -242,7 +242,7 @@ export class SimpleSwapService {
    * Получить данные для approve транзакции
    */
   async getApproveTransaction(
-    tokenAddress: string, 
+    tokenAddress: string,
     amount: string,
     decimals: number = 18
   ): Promise<SwapTransaction> {
@@ -269,7 +269,7 @@ export class SimpleSwapService {
       }
 
       const data = await response.json();
-      
+
       return {
         to: data.to as Address,
         data: data.data as `0x${string}`,
@@ -324,7 +324,7 @@ export class SimpleSwapService {
 
     try {
       const response = await fetch(`${window.location.origin}${ONEINCH_API_URL}/swap/v5.2/${BASE_CHAIN_ID}/approve/spender`);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ 1inch API Error:', response.status, errorText);
@@ -369,13 +369,13 @@ export class SimpleSwapService {
     if (BigInt(allowance) < requiredAmount) {
       console.log(`💰 Adding approve for ${params.fromToken.address}: ${requiredAmount.toString()}`);
       console.log(`   Current allowance: ${allowance}, Required: ${requiredAmount.toString()}`);
-      
+
       const approveTx = await this.getApproveTransaction(
         params.fromToken.address,
         params.amount,
         params.fromToken.decimals
       );
-      
+
       calls.push({
         to: approveTx.to,
         data: approveTx.data,
@@ -410,7 +410,7 @@ export class SimpleSwapService {
       if (!this.isNativeToken(swap.fromToken.address)) {
         const amount = parseUnits(swap.amount, swap.fromToken.decimals);
         const currentMax = tokenApprovals.get(swap.fromToken.address) || BigInt(0);
-        
+
         if (amount > currentMax) {
           tokenApprovals.set(swap.fromToken.address, amount);
         }
@@ -421,21 +421,21 @@ export class SimpleSwapService {
     for (const tokenApprovalEntry of Array.from(tokenApprovals.entries())) {
       const [tokenAddress, amount] = tokenApprovalEntry;
       const allowance = await this.getAllowance(tokenAddress, params.walletAddress);
-      
+
       if (BigInt(allowance) < amount) {
         console.log(`💰 Adding approve for ${tokenAddress}: ${amount.toString()}`);
-        
+
         // Находим правильные decimals для токена
-        const tokenDecimals = params.swaps.find(swap => 
+        const tokenDecimals = params.swaps.find(swap =>
           swap.fromToken.address.toLowerCase() === tokenAddress.toLowerCase()
         )?.fromToken.decimals || 18;
-        
+
         const approveTx = await this.getApproveTransaction(
           tokenAddress,
           amount.toString(),
           tokenDecimals
         );
-        
+
         calls.push({
           to: approveTx.to,
           data: approveTx.data,
@@ -475,15 +475,15 @@ export class SimpleSwapService {
    * Экономит газ за счет подписи вместо approve транзакции
    */
   private async generatePermitData(
-    tokenAddress: string, 
-    amount: string, 
+    tokenAddress: string,
+    amount: string,
     walletAddress: string
   ): Promise<string | undefined> {
     try {
       // Проверяем, поддерживает ли токен permit (ERC-2612)
       const spender = await this.getSpender();
       const amountInWei = parseUnits(amount, 18); // Предполагаем 18 decimals
-      
+
       // Для демо режима возвращаем undefined (будет использован обычный approve)
       if (this.isDemoMode) {
         return undefined;
@@ -494,11 +494,11 @@ export class SimpleSwapService {
       console.log('🔐 Generating permit data for:', tokenAddress);
       console.log('   Amount:', amountInWei.toString());
       console.log('   Spender:', spender);
-      
+
       // TODO: Реализовать генерацию permit подписи
       // Пока возвращаем undefined для использования обычного approve
       return undefined;
-      
+
     } catch (error) {
       console.error('Failed to generate permit data:', error);
       return undefined;
@@ -542,7 +542,7 @@ export class SimpleSwapService {
 
   private getDemoSwapTransaction(params: SwapParams): SwapTransaction {
     const amount = parseUnits(params.amount, params.fromToken.decimals);
-    
+
     return {
       to: ONEINCH_ROUTER as Address,
       data: '0x12aa3caf' as `0x${string}`, // swap() selector placeholder
@@ -554,7 +554,7 @@ export class SimpleSwapService {
 
   private getDemoApproveTransaction(tokenAddress: string, amount: string): SwapTransaction {
     const amountInWei = parseUnits(amount, 18);
-    
+
     return {
       to: tokenAddress as Address,
       data: encodeFunctionData({
@@ -585,4 +585,3 @@ export class SimpleSwapService {
 }
 
 export const simpleSwapService = new SimpleSwapService();
-

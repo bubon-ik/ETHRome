@@ -1,13 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { PlusIcon, ArrowsUpDownIcon, Cog6ToothIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
-import TokenSelector from './TokenSelector';
-import AmountInput from './AmountInput';
 import SwapRoute from './SwapRoute';
 import SimpleBatchSwapButton from './SimpleBatchSwapButton';
 import { SwapRoute as SwapRouteType, Token } from '@/types';
 import { BASE_TOKENS } from '@/lib/wagmi';
-import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
+import { oneInchService } from '@/lib/1inch';
 
 const SwapInterface: React.FC = () => {
   const [routes, setRoutes] = useState<SwapRouteType[]>([
@@ -20,7 +18,7 @@ const SwapInterface: React.FC = () => {
   const [slippage, setSlippage] = useState(1);
   const [deadline, setDeadline] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
-  const features = oneInchLimitOrderService.getFeatures();
+  const features = oneInchService.getFeatures();
 
   // Keyboard navigation
   React.useEffect(() => {
