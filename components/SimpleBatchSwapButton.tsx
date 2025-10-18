@@ -36,6 +36,7 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
     const [lastSwapTime, setLastSwapTime] = useState(0);
     const [recipientInput, setRecipientInput] = useState<string>('');
     const [showRecipientField, setShowRecipientField] = useState(false);
+    const [quoteError, setQuoteError] = useState<string | null>(null);
 
     const isEnsName = recipientInput.includes('.');
     const {
@@ -73,10 +74,12 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
             if (!routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0)) {
                 setQuotes([]);
                 setTotalGas('0');
+                setQuoteError(null);
                 return;
             }
 
             setIsGettingQuotes(true);
+            setQuoteError(null);
 
             try {
                 const quotePromises = routes.map(async (route) => {
@@ -85,7 +88,7 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                     if (!route.from.amount || amount === 0 || isNaN(amount)) return null;
 
                     try {
-                        const quote = await simpleSwapService.getQuote({
+                        const quoteResult = await simpleSwapService.getQuote({
                             fromToken: route.from,
                             toToken: route.to,
                             amount: route.from.amount,
@@ -93,7 +96,12 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                             slippage,
                         });
 
-                        return quote;
+                        if (quoteResult.error) {
+                            console.error('Quote error for route:', route, quoteResult.error);
+                            return null;
+                        }
+
+                        return quoteResult.data;
                     } catch (error) {
                         console.error('Quote error for route:', route, error);
                         return null;
@@ -118,6 +126,7 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                 console.error('Failed to get quotes:', err);
                 setQuotes([]);
                 setTotalGas('0');
+                setQuoteError('Failed to get quotes');
             } finally {
                 setIsGettingQuotes(false);
             }
@@ -166,12 +175,18 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
         });
     };
 
-    const isDisabled = !mounted || !address ||
+    const hasInsufficientBalance = (error && (error.toLowerCase().includes('not enough') || error.toLowerCase().includes('insufficient'))) ||
+        (quoteError && (quoteError.toLowerCase().includes('not enough') || quoteError.toLowerCase().includes('insufficient')));
+
+    const isDisabled = Boolean(
+        !mounted || !address ||
         !routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0) ||
         isLoading ||
         isGettingQuotes ||
         (showRecipientField && !!recipientInput && !isAddress(recipientInput) && !isResolvingEns && !resolvedAddress) ||
-        (showRecipientField && isResolvingEns);
+        (showRecipientField && isResolvingEns) ||
+        hasInsufficientBalance
+    );
 
     const getButtonText = () => {
         if (!mounted) return 'Loading...';
@@ -334,6 +349,27 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                                 ? 'text-orange-800 dark:text-orange-200'
                                 : 'text-red-800 dark:text-red-200'
                                 }`}
+                            title="Dismiss notification"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Quote Error Display */}
+            {quoteError && (
+                <div className="liquid-glass rounded-2xl p-4 bg-red-500/20 border border-red-400/30">
+                    <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2 flex-1">
+                            <span className="text-lg">⚠️</span>
+                            <div className="text-sm text-red-800 dark:text-red-200">
+                                <p className="font-semibold">{quoteError}</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setQuoteError(null)}
+                            className="ml-2 hover:opacity-75 text-red-800 dark:text-red-200"
                             title="Dismiss notification"
                         >
                             ✕

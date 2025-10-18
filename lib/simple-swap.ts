@@ -1,3 +1,5 @@
+// all errors from main page process here
+
 import { SwapQuote, Token } from '@/types';
 import { parseUnits, encodeFunctionData, erc20Abi, type Address } from 'viem';
 
@@ -6,6 +8,8 @@ const BASE_CHAIN_ID = 8453; // Base mainnet
 const ONEINCH_ROUTER = '0x1111111254EEB25477B68fb85Ed929f73A960582';
 const ETH_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ETH_ADDRESS_1INCH = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+
+type Result<T> = { data: T; error: null } | { data: null; error: string };
 
 export interface SwapParams {
     fromToken: Token;
@@ -51,12 +55,12 @@ export class SimpleSwapService {
         return address;
     }
 
-    async getQuote(params: SwapParams): Promise<SwapQuote> {
+    async getQuote(params: SwapParams): Promise<Result<SwapQuote>> {
         if (this.isDemoMode) {
-            return this.getDemoQuote(params);
+            return { data: this.getDemoQuote(params), error: null };
         }
         if (typeof window === 'undefined') {
-            return this.getDemoQuote(params);
+            return { data: this.getDemoQuote(params), error: null };
         }
         try {
             const url = new URL(`${ONEINCH_API_URL}/swap/v5.0/${BASE_CHAIN_ID}/quote`, window.location.origin);
@@ -76,41 +80,53 @@ export class SimpleSwapService {
                 const errorText = await response.text();
                 if (response.status === 429) {
                     console.warn('Rate limit exceeded, please slow down requests');
-                    throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+                    return { data: null, error: 'Rate limit exceeded. Please wait a moment and try again.' };
                 }
                 console.error('API Error:', response.status, errorText);
-                throw new Error(`1inch API error: ${response.status} - ${errorText}`);
+                let errorMessage = `1inch API error: ${response.status} - ${errorText}`;
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    if (errorJson.description) {
+                        errorMessage = errorJson.description;
+                    }
+                } catch (e) {
+                    // Keep the full error if parsing fails
+                }
+                return { data: null, error: errorMessage };
             }
             const data = await response.json();
             console.log('Quote received:', data);
             return {
-                fromToken: {
-                    address: params.fromToken.address,
-                    symbol: data.fromToken?.symbol || params.fromToken.symbol,
-                    name: data.fromToken?.name || params.fromToken.name,
-                    decimals: data.fromToken?.decimals || params.fromToken.decimals,
-                    chainId: BASE_CHAIN_ID,
+                data: {
+                    fromToken: {
+                        address: params.fromToken.address,
+                        symbol: data.fromToken?.symbol || params.fromToken.symbol,
+                        name: data.fromToken?.name || params.fromToken.name,
+                        decimals: data.fromToken?.decimals || params.fromToken.decimals,
+                        chainId: BASE_CHAIN_ID,
+                    },
+                    toToken: {
+                        address: params.toToken.address,
+                        symbol: data.toToken?.symbol || params.toToken.symbol,
+                        name: data.toToken?.name || params.toToken.name,
+                        decimals: data.toToken?.decimals || params.toToken.decimals,
+                        chainId: BASE_CHAIN_ID,
+                    },
+                    fromAmount: data.fromTokenAmount || params.amount,
+                    toAmount: data.toTokenAmount || '0',
+                    gas: data.estimatedGas || '150000',
+                    gasPrice: '2000000000',
+                    protocols: data.protocols || [],
                 },
-                toToken: {
-                    address: params.toToken.address,
-                    symbol: data.toToken?.symbol || params.toToken.symbol,
-                    name: data.toToken?.name || params.toToken.name,
-                    decimals: data.toToken?.decimals || params.toToken.decimals,
-                    chainId: BASE_CHAIN_ID,
-                },
-                fromAmount: data.fromTokenAmount || params.amount,
-                toAmount: data.toTokenAmount || '0',
-                gas: data.estimatedGas || '150000',
-                gasPrice: '2000000000',
-                protocols: data.protocols || [],
+                error: null
             };
         } catch (error) {
             console.error('Failed to get quote:', error);
-            return this.getDemoQuote(params);
+            return { data: this.getDemoQuote(params), error: null };
         }
     }
 
-    async getBatchSwapTransaction(params: SwapParams & { slippage?: number }): Promise<SwapTransaction> {
+    async getBatchSwapTransaction(params: SwapParams & { slippage?: number }): Promise<Result<SwapTransaction>> {
         console.log('Getting real batch swap transaction from 1inch API');
         try {
             const url = new URL(`${ONEINCH_API_URL}/swap/v5.0/${BASE_CHAIN_ID}/swap`, window.location.origin);
@@ -138,25 +154,37 @@ export class SimpleSwapService {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('1inch API Error:', response.status, errorText);
-                throw new Error(`1inch API error: ${response.status} - ${errorText}`);
+                let errorMessage = `1inch API error: ${response.status} - ${errorText}`;
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    if (errorJson.description) {
+                        errorMessage = errorJson.description;
+                    }
+                } catch (e) {
+                    // Keep the full error if parsing fails
+                }
+                return { data: null, error: errorMessage };
             }
             const data = await response.json();
             return {
-                to: data.tx.to as Address,
-                data: data.tx.data as `0x${string}`,
-                value: BigInt(data.tx.value || '0'),
-                gas: data.tx.gas,
-                gasPrice: data.tx.gasPrice,
+                data: {
+                    to: data.tx.to as Address,
+                    data: data.tx.data as `0x${string}`,
+                    value: BigInt(data.tx.value || '0'),
+                    gas: data.tx.gas,
+                    gasPrice: data.tx.gasPrice,
+                },
+                error: null
             };
         } catch (error) {
             console.error('Failed to get batch swap transaction:', error);
-            throw error;
+            return { data: null, error: 'Failed to get batch swap transaction' };
         }
     }
 
-    async getSwapTransaction(params: SwapParams & { slippage?: number }): Promise<SwapTransaction> {
+    async getSwapTransaction(params: SwapParams & { slippage?: number }): Promise<Result<SwapTransaction>> {
         if (this.isDemoMode) {
-            return this.getDemoSwapTransaction(params);
+            return { data: this.getDemoSwapTransaction(params), error: null };
         }
         try {
             const url = new URL(`${ONEINCH_API_URL}/swap/v5.0/${BASE_CHAIN_ID}/swap`, window.location.origin);
@@ -182,19 +210,31 @@ export class SimpleSwapService {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('1inch API Error:', response.status, errorText);
-                throw new Error(`1inch API error: ${response.status} - ${errorText}`);
+                let errorMessage = `1inch API error: ${response.status} - ${errorText}`;
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    if (errorJson.description) {
+                        errorMessage = errorJson.description;
+                    }
+                } catch (e) {
+                    // Keep the full error if parsing fails
+                }
+                return { data: null, error: errorMessage };
             }
             const data = await response.json();
             return {
-                to: data.tx.to as Address,
-                data: data.tx.data as `0x${string}`,
-                value: BigInt(data.tx.value || '0'),
-                gas: data.tx.gas,
-                gasPrice: data.tx.gasPrice,
+                data: {
+                    to: data.tx.to as Address,
+                    data: data.tx.data as `0x${string}`,
+                    value: BigInt(data.tx.value || '0'),
+                    gas: data.tx.gas,
+                    gasPrice: data.tx.gasPrice,
+                },
+                error: null
             };
         } catch (error) {
             console.error('Failed to get swap transaction:', error);
-            return this.getDemoSwapTransaction(params);
+            return { data: this.getDemoSwapTransaction(params), error: null };
         }
     }
 
@@ -202,9 +242,9 @@ export class SimpleSwapService {
         tokenAddress: string,
         amount: string,
         decimals: number = 18
-    ): Promise<SwapTransaction> {
+    ): Promise<Result<SwapTransaction>> {
         if (this.isDemoMode) {
-            return this.getDemoApproveTransaction(tokenAddress, amount);
+            return { data: this.getDemoApproveTransaction(tokenAddress, amount), error: null };
         }
         try {
             const url = new URL(`${ONEINCH_API_URL}/swap/v5.2/${BASE_CHAIN_ID}/approve/transaction`, window.location.origin);
@@ -219,77 +259,99 @@ export class SimpleSwapService {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('1inch API Error:', response.status, errorText);
-                throw new Error(`1inch API error: ${response.status} - ${errorText}`);
+                let errorMessage = `1inch API error: ${response.status} - ${errorText}`;
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    if (errorJson.description) {
+                        errorMessage = errorJson.description;
+                    }
+                } catch (e) {
+                    // Keep the full error if parsing fails
+                }
+                return { data: null, error: errorMessage };
             }
             const data = await response.json();
             return {
-                to: data.to as Address,
-                data: data.data as `0x${string}`,
-                value: BigInt(data.value || '0'),
-                gas: data.gas,
-                gasPrice: data.gasPrice,
+                data: {
+                    to: data.to as Address,
+                    data: data.data as `0x${string}`,
+                    value: BigInt(data.value || '0'),
+                    gas: data.gas,
+                    gasPrice: data.gasPrice,
+                },
+                error: null
             };
         } catch (error) {
             console.error('Failed to get approve transaction:', error);
-            return this.getDemoApproveTransaction(tokenAddress, amount);
+            return { data: this.getDemoApproveTransaction(tokenAddress, amount), error: null };
         }
     }
 
-    async getAllowance(tokenAddress: string, walletAddress: string): Promise<string> {
+    async getAllowance(tokenAddress: string, walletAddress: string): Promise<Result<string>> {
         if (this.isDemoMode) {
-            return '0';
+            return { data: '0', error: null };
         }
         try {
             const spender = await this.getSpender();
+            if (spender.error) {
+                return { data: null, error: spender.error };
+            }
             const url = new URL(`${ONEINCH_API_URL}/swap/v5.2/${BASE_CHAIN_ID}/approve/allowance`, window.location.origin);
             url.searchParams.append('tokenAddress', tokenAddress);
             url.searchParams.append('walletAddress', walletAddress);
-            url.searchParams.append('spenderAddress', spender);
+            url.searchParams.append('spenderAddress', spender.data!);
             const response = await fetch(url.toString());
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('1inch API Error:', response.status, errorText);
-                throw new Error(`1inch API error: ${response.status} - ${errorText}`);
+                return { data: null, error: `1inch API error: ${response.status} - ${errorText}` };
             }
             const data = await response.json();
-            return data.allowance;
+            return { data: data.allowance, error: null };
         } catch (error) {
             console.error('Failed to get allowance:', error);
-            return '0';
+            return { data: '0', error: null };
         }
     }
 
-    async getSpender(): Promise<string> {
+    async getSpender(): Promise<Result<string>> {
         if (this.isDemoMode) {
-            return ONEINCH_ROUTER;
+            return { data: ONEINCH_ROUTER, error: null };
         }
         try {
             const response = await fetch(`${window.location.origin}${ONEINCH_API_URL}/swap/v5.2/${BASE_CHAIN_ID}/approve/spender`);
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('1inch API Error:', response.status, errorText);
-                throw new Error(`1inch API error: ${response.status} - ${errorText}`);
+                return { data: null, error: `1inch API error: ${response.status} - ${errorText}` };
             }
             const data = await response.json();
-            return data.address;
+            return { data: data.address, error: null };
         } catch (error) {
             console.error('Failed to get spender:', error);
-            return ONEINCH_ROUTER;
+            return { data: ONEINCH_ROUTER, error: null };
         }
     }
 
-    async prepareSingleSwapCall(params: SwapParams): Promise<BatchSwapCall[]> {
+    async prepareSingleSwapCall(params: SwapParams): Promise<Result<BatchSwapCall[]>> {
         const calls: BatchSwapCall[] = [];
         if (this.isNativeToken(params.fromToken.address)) {
             const swapTx = await this.getSwapTransaction(params);
+            if (swapTx.error) {
+                return { data: null, error: swapTx.error };
+            }
             calls.push({
-                to: swapTx.to,
-                data: swapTx.data,
-                value: swapTx.value,
+                to: swapTx.data!.to,
+                data: swapTx.data!.data,
+                value: swapTx.data!.value,
             });
-            return calls;
+            return { data: calls, error: null };
         }
-        const allowance = await this.getAllowance(params.fromToken.address, params.walletAddress);
+        const allowanceResult = await this.getAllowance(params.fromToken.address, params.walletAddress);
+        if (allowanceResult.error) {
+            return { data: null, error: allowanceResult.error };
+        }
+        const allowance = allowanceResult.data!;
         const requiredAmount = parseUnits(params.amount, params.fromToken.decimals);
         if (BigInt(allowance) < requiredAmount) {
             console.log(`Adding approve for ${params.fromToken.address}: ${requiredAmount.toString()}`);
@@ -299,29 +361,35 @@ export class SimpleSwapService {
                 params.amount,
                 params.fromToken.decimals
             );
+            if (approveTx.error) {
+                return { data: null, error: approveTx.error };
+            }
             calls.push({
-                to: approveTx.to,
-                data: approveTx.data,
-                value: approveTx.value,
+                to: approveTx.data!.to,
+                data: approveTx.data!.data,
+                value: approveTx.data!.value,
             });
         } else {
             console.log(`Sufficient allowance for ${params.fromToken.address}: ${allowance}`);
         }
         const swapTx = await this.getBatchSwapTransaction(params);
+        if (swapTx.error) {
+            return { data: null, error: swapTx.error };
+        }
         calls.push({
-            to: swapTx.to,
-            data: swapTx.data,
-            value: swapTx.value,
+            to: swapTx.data!.to,
+            data: swapTx.data!.data,
+            value: swapTx.data!.value,
         });
         console.log(`Prepared ${calls.length} calls for single swap`);
-        return calls;
+        return { data: calls, error: null };
     }
 
     async prepareBatchSwapCalls(params: {
         swaps: SwapParams[];
         walletAddress: string;
         slippage?: number;
-    }): Promise<BatchSwapCall[]> {
+    }): Promise<Result<BatchSwapCall[]>> {
         const calls: BatchSwapCall[] = [];
         const tokenApprovals = new Map<string, bigint>();
         for (const swap of params.swaps) {
@@ -335,7 +403,11 @@ export class SimpleSwapService {
         }
         for (const tokenApprovalEntry of Array.from(tokenApprovals.entries())) {
             const [tokenAddress, amount] = tokenApprovalEntry;
-            const allowance = await this.getAllowance(tokenAddress, params.walletAddress);
+            const allowanceResult = await this.getAllowance(tokenAddress, params.walletAddress);
+            if (allowanceResult.error) {
+                return { data: null, error: allowanceResult.error };
+            }
+            const allowance = allowanceResult.data!;
             if (BigInt(allowance) < amount) {
                 console.log(`Adding approve for ${tokenAddress}: ${amount.toString()}`);
                 const tokenDecimals = params.swaps.find(swap =>
@@ -346,10 +418,13 @@ export class SimpleSwapService {
                     amount.toString(),
                     tokenDecimals
                 );
+                if (approveTx.error) {
+                    return { data: null, error: approveTx.error };
+                }
                 calls.push({
-                    to: approveTx.to,
-                    data: approveTx.data,
-                    value: approveTx.value,
+                    to: approveTx.data!.to,
+                    data: approveTx.data!.data,
+                    value: approveTx.data!.value,
                 });
             }
         }
@@ -359,14 +434,17 @@ export class SimpleSwapService {
                 walletAddress: params.walletAddress,
                 slippage: params.slippage,
             });
+            if (swapTx.error) {
+                return { data: null, error: swapTx.error };
+            }
             calls.push({
-                to: swapTx.to,
-                data: swapTx.data,
-                value: swapTx.value,
+                to: swapTx.data!.to,
+                data: swapTx.data!.data,
+                value: swapTx.data!.value,
             });
         }
         console.log(`Prepared ${calls.length} calls: ${tokenApprovals.size} approves + ${params.swaps.length} swaps`);
-        return calls;
+        return { data: calls, error: null };
     }
 
     private isNativeToken(address: string): boolean {

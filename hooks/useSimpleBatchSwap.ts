@@ -93,19 +93,25 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
             }));
 
             // Определяем, нужен ли batch или одиночный swap
-            let calls;
+            let callsResult;
             if (swapParams.length === 1) {
                 // Одиночный swap - используем оптимизированную логику
-                calls = await simpleSwapService.prepareSingleSwapCall(swapParams[0]);
+                callsResult = await simpleSwapService.prepareSingleSwapCall(swapParams[0]);
             } else {
                 // Множественные свапы - используем batch логику
-                calls = await simpleSwapService.prepareBatchSwapCalls({
+                callsResult = await simpleSwapService.prepareBatchSwapCalls({
                     swaps: swapParams,
                     walletAddress: address,
                     slippage: params.slippage,
                 });
             }
 
+            if (callsResult.error) {
+                setError(callsResult.error);
+                return;
+            }
+
+            const calls = callsResult.data!;
             setCallsCount(calls.length);
             console.log(`📦 Prepared ${calls.length} batch calls`);
 
