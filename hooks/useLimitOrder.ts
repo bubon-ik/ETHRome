@@ -1,7 +1,6 @@
 import { useAccount, useSwitchChain } from 'wagmi';
 import { useState } from 'react';
 import { parseUnits, erc20Abi } from 'viem';
-import type { EIP712TypedData } from '@1inch/limit-order-sdk';
 import { readContract, signTypedData, waitForTransactionReceipt, writeContract } from '@wagmi/core';
 import { config } from '@/lib/wagmi';
 import { base } from 'wagmi/chains';
@@ -10,12 +9,6 @@ import { MakerTraits, Address, Sdk, randBigInt, FetchProviderConnector } from '@
 
 const CHAIN_ID = 8453;
 const LIMIT_ORDER_CONTRACT: `0x${string}` = '0x111111125421cA6dc452d289314280a0f8842A65';
-// const MY_PRIVATE_KEY: `0x${string}` = 'a5b5d091e6306c8c6bb3115cfc4a54bf56716a2facc5be00302c887f2dfb47cf';
-
-
-
-
-
 
 export const useLimitOrder = () => {
     const { address, isConnected, chainId } = useAccount();
@@ -89,7 +82,7 @@ export const useLimitOrder = () => {
 
             const sdk = new Sdk({
                 networkId: CHAIN_ID,
-                baseUrl: "1inch-vercel-proxy-theta.vercel.app",
+                baseUrl: "https://1inch-vercel-proxy-theta.vercel.app/orderbook/v4.1",
                 authKey: process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '',
                 httpConnector: new FetchProviderConnector(),
             });
@@ -108,7 +101,7 @@ export const useLimitOrder = () => {
                 makingAmount,
                 takingAmount,
             }, makerTraits);
-            
+
 
             const typedData = order.getTypedData(CHAIN_ID);
 
