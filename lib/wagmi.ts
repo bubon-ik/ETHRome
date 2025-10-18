@@ -1,5 +1,5 @@
 import { createConfig, http } from 'wagmi';
-import { base } from 'wagmi/chains';
+import { base, mainnet, sepolia } from 'wagmi/chains';
 import { injected, walletConnect } from 'wagmi/connectors';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'your-project-id';
@@ -10,7 +10,7 @@ let config: ReturnType<typeof createConfig> | null = null;
 export const getWagmiConfig = () => {
   if (!config) {
     config = createConfig({
-      chains: [base],
+      chains: [base, mainnet, sepolia],
       connectors: [
         injected(),
         walletConnect({
@@ -19,6 +19,8 @@ export const getWagmiConfig = () => {
       ],
       transports: {
         [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://mainnet.base.org'),
+        [mainnet.id]: http(process.env.NEXT_PUBLIC_MAINNET_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/demo'),
+        [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://eth-sepolia.public.blastapi.io'),
       },
     });
   }
