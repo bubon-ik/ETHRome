@@ -20,14 +20,36 @@ const LimitOrdersPanel: React.FC = () => {
     const [amountIn, setAmountIn] = useState('');
     const [amountOut, setAmountOut] = useState('');
     const [orders, setOrders] = useState<OrderItem[]>([]);
+    const [validationError, setValidationError] = useState<string | null>(null);
     const { createLimitOrder, loading, error, transactions, currentTx } = useLimitOrder();
 
     const inToken = BASE_TOKENS.find(t => t.address === tokenIn)!;
     const outToken = BASE_TOKENS.find(t => t.address === tokenOut)!;
 
     const addToOrders = () => {
-        if (!amountIn || !amountOut) return;
+        setValidationError(null);
 
+        // Simple validation - just the essential checks
+        if (!amountIn || !amountOut) {
+            setValidationError("Please enter both input and output amounts");
+            return;
+        }
+
+        // Check if same token is selected for both input and output
+        if (tokenIn === tokenOut) {
+            setValidationError("Cannot create an order with the same token for input and output");
+            return;
+        }
+
+        // Make sure amounts are valid numbers
+        const inAmount = parseFloat(amountIn);
+        const outAmount = parseFloat(amountOut);
+        if (isNaN(inAmount) || inAmount <= 0 || isNaN(outAmount) || outAmount <= 0) {
+            setValidationError("Amounts must be positive numbers");
+            return;
+        }
+
+        // All validation passed, add to orders
         const newOrder: OrderItem = {
             tokenIn,
             tokenOut,
@@ -40,6 +62,7 @@ const LimitOrdersPanel: React.FC = () => {
         setOrders([...orders, newOrder]);
         setAmountIn('');
         setAmountOut('');
+        setValidationError(null);
     };
 
     const removeOrder = (index: number) => {
@@ -78,7 +101,10 @@ const LimitOrdersPanel: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
                     <select
                         value={tokenIn}
-                        onChange={(e) => setTokenIn(e.target.value)}
+                        onChange={(e) => {
+                            setTokenIn(e.target.value);
+                            setValidationError(null);
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         disabled={loading}
                     >
@@ -91,9 +117,13 @@ const LimitOrdersPanel: React.FC = () => {
                         step="0.0001"
                         placeholder="Amount"
                         value={amountIn}
-                        onChange={(e) => setAmountIn(e.target.value)}
+                        onChange={(e) => {
+                            setAmountIn(e.target.value);
+                            setValidationError(null);
+                        }}
                         className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg"
                         disabled={loading}
+                        min="0"
                     />
                 </div>
 
@@ -101,7 +131,10 @@ const LimitOrdersPanel: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
                     <select
                         value={tokenOut}
-                        onChange={(e) => setTokenOut(e.target.value)}
+                        onChange={(e) => {
+                            setTokenOut(e.target.value);
+                            setValidationError(null);
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         disabled={loading}
                     >
@@ -114,11 +147,19 @@ const LimitOrdersPanel: React.FC = () => {
                         step="0.0001"
                         placeholder="Min amount to receive"
                         value={amountOut}
-                        onChange={(e) => setAmountOut(e.target.value)}
+                        onChange={(e) => {
+                            setAmountOut(e.target.value);
+                            setValidationError(null);
+                        }}
                         className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg"
                         disabled={loading}
+                        min="0"
                     />
                 </div>
+
+                {validationError && (
+                    <div className="text-red-500 text-sm mb-2">{validationError}</div>
+                )}
 
                 <button
                     type="button"
@@ -126,7 +167,7 @@ const LimitOrdersPanel: React.FC = () => {
                     disabled={loading || !amountIn || !amountOut}
                     className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
                 >
-                    Add to Batch
+                    {tokenIn === tokenOut ? "Cannot use same token" : "Add to Batch"}
                 </button>
             </div>
 

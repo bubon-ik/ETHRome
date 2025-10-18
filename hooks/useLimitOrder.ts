@@ -79,6 +79,8 @@ export const useLimitOrder = () => {
             }
         }
 
+        // Assume orders are already validated at UI level
+
         try {
             setLoading(true);
             setError(null);
