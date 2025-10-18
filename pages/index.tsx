@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { motion } from 'framer-motion';
 import { useAccount, useConnect, useDisconnect, useEnsName, useEnsAvatar } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { base, sepolia } from 'wagmi/chains';
 import {
   ArrowsRightLeftIcon,
   ClockIcon,
@@ -24,10 +24,10 @@ export default function Home() {
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
 
-  // Get ENS name from mainnet
-  const { data: mainnetEnsName, isLoading: isLoadingMainnetEns } = useEnsName({
+  // Get ENS name from Base
+  const { data: baseEnsName, isLoading: isLoadingBaseEns } = useEnsName({
     address,
-    chainId: mainnet.id,
+    chainId: base.id,
   });
 
   // Get ENS name from Sepolia testnet
@@ -43,10 +43,10 @@ export default function Home() {
     }
   }, [sepoliaEnsError]);
 
-  // Get ENS avatar from mainnet - only if we have a name
-  const { data: mainnetEnsAvatar } = useEnsAvatar({
-    name: mainnetEnsName ?? undefined,
-    chainId: mainnet.id,
+  // Get ENS avatar from Base - only if we have a name
+  const { data: baseEnsAvatar } = useEnsAvatar({
+    name: baseEnsName ?? undefined,
+    chainId: base.id,
   });
 
   // Get ENS avatar from Sepolia testnet - only if we have a name
@@ -66,7 +66,7 @@ export default function Home() {
 
   // Use the first available ENS name (filter out null values)
   // Since we know the user has a Sepolia ENS name, prioritize that
-  let ensName = sepoliaEnsName || mainnetEnsName || null;
+  let ensName = sepoliaEnsName || baseEnsName || null;
 
   // Process avatar URL to handle various formats (IPFS, Arweave, HTTP, etc.)
   const processAvatarUrl = (url: string | null): string | null => {
@@ -88,7 +88,7 @@ export default function Home() {
   };
 
   // Process and prioritize ENS avatars
-  let ensAvatar = processAvatarUrl(sepoliaEnsAvatar || mainnetEnsAvatar || null);
+  let ensAvatar = processAvatarUrl(sepoliaEnsAvatar || baseEnsAvatar || null);
 
   // Reset avatar states when the avatar URL changes
   useEffect(() => {
@@ -106,14 +106,14 @@ export default function Home() {
   useEffect(() => {
     if (mounted && address) {
       console.log('Wallet address:', address);
-      console.log('Mainnet ENS name:', mainnetEnsName);
+      console.log('Base ENS name:', baseEnsName);
       console.log('Sepolia ENS name:', sepoliaEnsName);
       console.log('ENS Avatar (processed):', ensAvatar);
-      console.log('Original Mainnet ENS Avatar:', mainnetEnsAvatar);
+      console.log('Original Base ENS Avatar:', baseEnsAvatar);
       console.log('Original Sepolia ENS Avatar:', sepoliaEnsAvatar);
       console.log('Avatar loaded:', avatarLoaded);
       console.log('Avatar error:', avatarError);
-      console.log('Is loading Mainnet ENS:', isLoadingMainnetEns);
+      console.log('Is loading Base ENS:', isLoadingBaseEns);
       console.log('Is loading Sepolia ENS:', isLoadingSepoliaEns);
 
       // Check specifically for the known Sepolia ENS address
@@ -128,7 +128,7 @@ export default function Home() {
         }
       }
     }
-  }, [mounted, address, mainnetEnsName, sepoliaEnsName, ensAvatar, mainnetEnsAvatar, sepoliaEnsAvatar, avatarLoaded, avatarError, isLoadingMainnetEns, isLoadingSepoliaEns]);
+  }, [mounted, address, baseEnsName, sepoliaEnsName, ensAvatar, baseEnsAvatar, sepoliaEnsAvatar, avatarLoaded, avatarError, isLoadingBaseEns, isLoadingSepoliaEns]);
 
   const tabs = [
     { id: 'swap', label: 'Swap', icon: ArrowsRightLeftIcon },
@@ -251,7 +251,7 @@ export default function Home() {
 
                       {/* Display ENS name or truncated address */}
                       <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                        {isLoadingMainnetEns || isLoadingSepoliaEns ? (
+                        {isLoadingBaseEns || isLoadingSepoliaEns ? (
                           <span className="animate-pulse">Loading ENS...</span>
                         ) : ensName ? (
                           <span className="flex items-center">
