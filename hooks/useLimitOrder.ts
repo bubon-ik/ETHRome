@@ -4,7 +4,6 @@ import { parseUnits, erc20Abi } from 'viem';
 import { readContract, signTypedData, waitForTransactionReceipt, writeContract } from '@wagmi/core';
 import { getWagmiConfig } from '@/lib/wagmi';
 import { base } from 'wagmi/chains';
-import { submitLimitOrder } from './limitOrderSdk';
 import { MakerTraits, Address, Sdk, randBigInt, FetchProviderConnector } from '@1inch/limit-order-sdk';
 
 const CHAIN_ID = 8453;
@@ -43,7 +42,6 @@ export const useLimitOrder = () => {
 
             await waitForTransactionReceipt(getWagmiConfig(), { hash });
         } catch (error) {
-            // Check if error is due to user rejection
             if (error instanceof Error &&
                 (error.message.includes('User denied') ||
                     error.message.includes('User rejected') ||
@@ -124,19 +122,18 @@ export const useLimitOrder = () => {
                 message: typedData.message,
             });
 
-            await submitLimitOrder(order, signature);
+            await sdk.submitOrder(order, signature);
 
 
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Unknown error';
 
-            // Handle user rejections with a friendly message
             if (message.includes('Transaction was rejected by user') ||
                 message.includes('User denied') ||
                 message.includes('User rejected') ||
                 message.toLowerCase().includes('user denied transaction signature')) {
                 setError('Transaction was cancelled by user');
-                return; // Don't rethrow the error for user rejections
+                return;
             } else {
                 setError(message);
                 throw err;
