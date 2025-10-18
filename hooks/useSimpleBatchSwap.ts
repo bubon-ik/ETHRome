@@ -22,6 +22,7 @@ export interface BatchSwapParams {
 
 export interface UseSimpleBatchSwapReturn {
   executeBatchSwap: (params: BatchSwapParams) => Promise<void>;
+  resetState: () => void;
   isLoading: boolean;
   error: string | null;
   txHash: string | null;
@@ -121,6 +122,11 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
           calls,
           account: address,
         });
+        
+        if (!result || !result.id) {
+          throw new Error('No valid batch ID received from sendCalls');
+        }
+        
         console.log('✅ Batch calls sent:', result.id);
       } catch (sendError) {
         const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
@@ -140,6 +146,7 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
         throw sendError;
       }
       
+      // Только устанавливаем ID если sendCalls прошел успешно
       setBatchId(result.id);
       setTxHash(result.id); // sendCalls возвращает batch ID
 
@@ -148,6 +155,11 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
       
       try {
         const config = getWagmiConfig();
+        
+        // Дополнительная проверка на валидность ID
+        if (!result.id || typeof result.id !== 'string') {
+          throw new Error('Invalid batch ID received');
+        }
         
         const status = await waitForCallsStatus(config, {
           id: result.id,
@@ -181,11 +193,17 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
             errorMessage.includes('bundle id is unknown') ||
             errorMessage.includes('No matching bundle found') ||
             errorMessage.includes('User rejected') ||
-            errorMessage.includes('rejected')) {
+            errorMessage.includes('rejected') ||
+            errorMessage.includes('cancelled') ||
+            errorMessage.includes('denied')) {
           
-          console.log('🚫 Transaction was cancelled by user');
-          setError('Transaction cancelled by user');
+          console.log('🚫 Transaction was cancelled or bundle not found');
+          setError('Transaction was cancelled or not found. Please try again.');
           setIsSuccess(false);
+          
+          // Reset batch ID since it's invalid
+          setBatchId(null);
+          setTxHash(null);
           return; // Выходим без установки success
         }
         
@@ -202,8 +220,18 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
     }
   }, [address, chain]);
 
+  const resetState = useCallback(() => {
+    setIsLoading(false);
+    setError(null);
+    setTxHash(null);
+    setBatchId(null);
+    setIsSuccess(false);
+    setCallsCount(0);
+  }, []);
+
   return {
     executeBatchSwap,
+    resetState,
     isLoading,
     error,
     txHash,

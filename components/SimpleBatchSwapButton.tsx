@@ -19,6 +19,7 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
   const { address } = useAccount();
   const { 
     executeBatchSwap, 
+    resetState,
     isLoading, 
     error, 
     txHash, 
@@ -36,7 +37,14 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
     setMounted(true);
   }, []);
 
-  // Get quotes for all routes
+  // Reset state on unmount to prevent stale bundle ID errors
+  useEffect(() => {
+    return () => {
+      resetState();
+    };
+  }, [resetState]);
+
+  // Get quotes for all routes with debouncing to avoid rate limiting
   useEffect(() => {
     const getQuotes = async () => {
       if (!routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0)) {
@@ -49,7 +57,9 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
       
       try {
         const quotePromises = routes.map(async (route) => {
-          if (!route.from.amount || parseFloat(route.from.amount) === 0) return null;
+          // Skip routes with no amount or invalid amounts
+          const amount = parseFloat(route.from.amount || '0');
+          if (!route.from.amount || amount === 0 || isNaN(amount)) return null;
           
           try {
             const quote = await simpleSwapService.getQuote({
@@ -90,7 +100,12 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
       }
     };
 
-    getQuotes();
+    // Debounce API calls to avoid rate limiting (429 errors)
+    const timeoutId = setTimeout(() => {
+      getQuotes();
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timeoutId);
   }, [routes, address, slippage]);
 
   const handleSwap = async () => {

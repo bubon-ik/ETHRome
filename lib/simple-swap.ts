@@ -93,6 +93,13 @@ export class SimpleSwapService {
 
       if (!response.ok) {
         const errorText = await response.text();
+        
+        // Handle rate limiting specifically
+        if (response.status === 429) {
+          console.warn('⚠️ Rate limit exceeded, please slow down requests');
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        }
+        
         console.error('❌ API Error:', response.status, errorText);
         throw new Error(`1inch API error: ${response.status} - ${errorText}`);
       }
