@@ -14,6 +14,8 @@ export const useLimitOrder = () => {
     const { switchChain } = useSwitchChain();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [transactions, setTransactions] = useState<number>(0);
+    const [currentTx, setCurrentTx] = useState<number>(0);
 
     const ensureAllowance = async (tokenAddress: string, requiredAmount: bigint) => {
         if (!address) return;
@@ -33,6 +35,7 @@ export const useLimitOrder = () => {
                 return;
             }
 
+            setCurrentTx(prev => prev + 1);
             const hash = await writeContract(getWagmiConfig(), {
                 address: formattedToken,
                 abi: erc20Abi,
@@ -53,12 +56,14 @@ export const useLimitOrder = () => {
     };
 
     const createLimitOrder = async (
-        tokenIn: string,
-        tokenOut: string,
-        amountIn: string,
-        amountOut: string,
-        decimalsIn: number,
-        decimalsOut?: number,
+        orders: Array<{
+            tokenIn: string,
+            tokenOut: string,
+            amountIn: string,
+            amountOut: string,
+            decimalsIn: number,
+            decimalsOut?: number
+        }>
     ) => {
         if (!address || !isConnected) {
             setError('Wallet not connected');
@@ -77,54 +82,58 @@ export const useLimitOrder = () => {
         try {
             setLoading(true);
             setError(null);
+            setCurrentTx(0);
 
-            const WETH_BASE = '0x4200000000000000000000000000000000000006';
-            const ETH_ADDRESS = '0x0000000000000000000000000000000000000000';
+            setTransactions(orders.length * 2); // Each order needs approval + signature
 
-            const makerAsset = tokenIn === ETH_ADDRESS ? WETH_BASE : tokenIn;
-            const takerAsset = tokenOut === ETH_ADDRESS ? WETH_BASE : tokenOut;
+            for (let i = 0; i < orders.length; i++) {
+                const { tokenIn, tokenOut, amountIn, amountOut, decimalsIn, decimalsOut } = orders[i];
 
-            const makingAmount = parseUnits(amountIn, decimalsIn);
-            const takingAmount = parseUnits(amountOut, decimalsOut || 18);
+                const makerAsset = tokenIn;
+                const takerAsset = tokenOut;
 
-            await ensureAllowance(makerAsset, makingAmount);
+                const makingAmount = parseUnits(amountIn, decimalsIn);
+                const takingAmount = parseUnits(amountOut, decimalsOut || 18);
 
-            const sdk = new Sdk({
-                networkId: CHAIN_ID,
-                baseUrl: "https://1inch-vercel-proxy-theta.vercel.app/orderbook/v4.1",
-                authKey: process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '',
-                httpConnector: new FetchProviderConnector(),
-            });
+                // For approval transaction
+                await ensureAllowance(makerAsset, makingAmount);
 
-            const makerTraits = MakerTraits.default()
-                .withAnySender()
-                .allowPartialFills()
-                .allowMultipleFills()
-                .withExpiration(BigInt(Math.floor(Date.now() / 1000) + 3600))
-                .withNonce(randBigInt((BigInt(1) << BigInt(40)) - BigInt(1)));
+                const sdk = new Sdk({
+                    networkId: CHAIN_ID,
+                    baseUrl: "https://1inch-vercel-proxy-theta.vercel.app/orderbook/v4.1",
+                    authKey: process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '',
+                    httpConnector: new FetchProviderConnector(),
+                });
 
-            const order = await sdk.createOrder({
-                maker: new Address(address),
-                makerAsset: new Address(makerAsset),
-                takerAsset: new Address(takerAsset),
-                makingAmount,
-                takingAmount,
-            }, makerTraits);
+                const makerTraits = MakerTraits.default()
+                    .withAnySender()
+                    .allowPartialFills()
+                    .allowMultipleFills()
+                    .withExpiration(BigInt(Math.floor(Date.now() / 1000) + 3600))
+                    .withNonce(randBigInt((BigInt(1) << BigInt(40)) - BigInt(1)));
 
+                const order = await sdk.createOrder({
+                    maker: new Address(address),
+                    makerAsset: new Address(makerAsset),
+                    takerAsset: new Address(takerAsset),
+                    makingAmount,
+                    takingAmount,
+                }, makerTraits);
 
-            const typedData = order.getTypedData(CHAIN_ID);
+                const typedData = order.getTypedData(CHAIN_ID);
 
-            const signature = await signTypedData(getWagmiConfig(), {
-                account: address,
-                types: typedData.types,
-                primaryType: typedData.primaryType,
-                domain: typedData.domain,
-                message: typedData.message,
-            });
+                // For signature transaction
+                setCurrentTx(prev => prev + 1);
+                const signature = await signTypedData(getWagmiConfig(), {
+                    account: address,
+                    types: typedData.types,
+                    primaryType: typedData.primaryType,
+                    domain: typedData.domain,
+                    message: typedData.message,
+                });
 
-            await sdk.submitOrder(order, signature);
-
-
+                await sdk.submitOrder(order, signature);
+            }
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Unknown error';
 
@@ -140,8 +149,10 @@ export const useLimitOrder = () => {
             }
         } finally {
             setLoading(false);
+            setCurrentTx(0);
+            setTransactions(0);
         }
     };
 
-    return { createLimitOrder, loading, error };
+    return { createLimitOrder, loading, error, transactions, currentTx };
 };
