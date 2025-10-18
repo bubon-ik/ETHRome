@@ -108,13 +108,31 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
       const config = getWagmiConfig();
       console.log('🔍 Config check:', !!config, 'Chain:', chain?.id, 'Account:', address);
       
-      const result = await sendCalls(config, {
-        calls,
-        account: address,
-        chainId: chain.id,
-      });
-
-      console.log('✅ Batch calls sent:', result.id);
+      let result;
+      try {
+        result = await sendCalls(config, {
+          calls,
+          account: address,
+          chainId: chain.id,
+        });
+        console.log('✅ Batch calls sent:', result.id);
+      } catch (sendError) {
+        const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
+        
+        if (errorMessage.includes('User rejected') || 
+            errorMessage.includes('rejected') ||
+            errorMessage.includes('cancelled') ||
+            errorMessage.includes('denied')) {
+          
+          console.log('🚫 Transaction was cancelled by user during sendCalls');
+          setError('Transaction cancelled by user');
+          setIsSuccess(false);
+          return;
+        }
+        
+        // Для других ошибок - пробрасываем дальше
+        throw sendError;
+      }
       
       setBatchId(result.id);
       setTxHash(result.id); // sendCalls возвращает batch ID
@@ -149,8 +167,23 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
         }
       } catch (statusError) {
         console.error('❌ Batch status error:', statusError);
-        // Не выбрасываем ошибку, так как batch мог выполниться успешно
-        // Просто помечаем как успешный и продолжаем
+        
+        // Проверяем, является ли ошибка связанной с отменой пользователем
+        const errorMessage = statusError instanceof Error ? statusError.message : String(statusError);
+        
+        if (errorMessage.includes('UnknownBundleIdError') || 
+            errorMessage.includes('bundle id is unknown') ||
+            errorMessage.includes('No matching bundle found') ||
+            errorMessage.includes('User rejected') ||
+            errorMessage.includes('rejected')) {
+          
+          console.log('🚫 Transaction was cancelled by user');
+          setError('Transaction cancelled by user');
+          setIsSuccess(false);
+          return; // Выходим без установки success
+        }
+        
+        // Для других ошибок - помечаем как успешный (возможно batch выполнился)
         setIsSuccess(true);
         console.log('🔄 Assuming success despite status error');
       }
