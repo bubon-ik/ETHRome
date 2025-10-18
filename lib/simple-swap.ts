@@ -22,6 +22,7 @@ export interface SwapParams {
   amount: string;
   walletAddress: string;
   slippage?: number;
+  permit?: string; // Permit данные для экономии газа
 }
 
 export interface SwapTransaction {
@@ -142,6 +143,12 @@ export class SimpleSwapService {
       url.searchParams.append('amount', parseUnits(params.amount, params.fromToken.decimals).toString());
       url.searchParams.append('from', params.walletAddress);
       url.searchParams.append('slippage', (params.slippage || 1).toString());
+      
+      // Добавляем permit данные если есть
+      if (params.permit) {
+        url.searchParams.append('permit', params.permit);
+        console.log('🔐 Using permit data for gas optimization');
+      }
 
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -266,6 +273,7 @@ export class SimpleSwapService {
 
   /**
    * Подготовить batch calls для множественных свапов
+   * Оптимизированная версия с минимальными транзакциями
    */
   async prepareBatchSwapCalls(params: {
     swaps: SwapParams[];
@@ -273,30 +281,43 @@ export class SimpleSwapService {
     slippage?: number;
   }): Promise<BatchSwapCall[]> {
     const calls: BatchSwapCall[] = [];
+    const tokenApprovals = new Map<string, bigint>(); // Токен -> максимальная сумма
 
+    // 1. Собираем все необходимые approve суммы для каждого токена
     for (const swap of params.swaps) {
-      // 1. Проверяем, нужен ли approve
       if (!this.isNativeToken(swap.fromToken.address)) {
-        const allowance = await this.getAllowance(swap.fromToken.address, params.walletAddress);
         const amount = parseUnits(swap.amount, swap.fromToken.decimals);
+        const currentMax = tokenApprovals.get(swap.fromToken.address) || BigInt(0);
         
-        if (BigInt(allowance) < amount) {
-          // Добавляем approve call
-          const approveTx = await this.getApproveTransaction(
-            swap.fromToken.address,
-            swap.amount,
-            swap.fromToken.decimals
-          );
-          
-          calls.push({
-            to: approveTx.to,
-            data: approveTx.data,
-            value: approveTx.value,
-          });
+        if (amount > currentMax) {
+          tokenApprovals.set(swap.fromToken.address, amount);
         }
       }
+    }
 
-      // 2. Добавляем swap call
+    // 2. Добавляем один approve для каждого токена (если нужен)
+    for (const [tokenAddress, amount] of tokenApprovals) {
+      const allowance = await this.getAllowance(tokenAddress, params.walletAddress);
+      
+      if (BigInt(allowance) < amount) {
+        console.log(`💰 Adding approve for ${tokenAddress}: ${amount.toString()}`);
+        
+        const approveTx = await this.getApproveTransaction(
+          tokenAddress,
+          amount.toString(),
+          18 // Используем 18 decimals для approve
+        );
+        
+        calls.push({
+          to: approveTx.to,
+          data: approveTx.data,
+          value: approveTx.value,
+        });
+      }
+    }
+
+    // 3. Добавляем все swap транзакции
+    for (const swap of params.swaps) {
       const swapTx = await this.getSwapTransaction({
         ...swap,
         walletAddress: params.walletAddress,
@@ -310,6 +331,7 @@ export class SimpleSwapService {
       });
     }
 
+    console.log(`📦 Prepared ${calls.length} calls: ${tokenApprovals.size} approves + ${params.swaps.length} swaps`);
     return calls;
   }
 
@@ -318,6 +340,41 @@ export class SimpleSwapService {
    */
   private isNativeToken(address: string): boolean {
     return address.toLowerCase() === ETH_ADDRESS.toLowerCase();
+  }
+
+  /**
+   * Генерировать permit данные для ERC-2612 токенов
+   * Экономит газ за счет подписи вместо approve транзакции
+   */
+  private async generatePermitData(
+    tokenAddress: string, 
+    amount: string, 
+    walletAddress: string
+  ): Promise<string | undefined> {
+    try {
+      // Проверяем, поддерживает ли токен permit (ERC-2612)
+      const spender = await this.getSpender();
+      const amountInWei = parseUnits(amount, 18); // Предполагаем 18 decimals
+      
+      // Для демо режима возвращаем undefined (будет использован обычный approve)
+      if (this.isDemoMode) {
+        return undefined;
+      }
+
+      // В реальном режиме можно добавить проверку поддержки permit
+      // и генерацию подписи через wallet
+      console.log('🔐 Generating permit data for:', tokenAddress);
+      console.log('   Amount:', amountInWei.toString());
+      console.log('   Spender:', spender);
+      
+      // TODO: Реализовать генерацию permit подписи
+      // Пока возвращаем undefined для использования обычного approve
+      return undefined;
+      
+    } catch (error) {
+      console.error('Failed to generate permit data:', error);
+      return undefined;
+    }
   }
 
   // ==================== DEMO MODE METHODS ====================
