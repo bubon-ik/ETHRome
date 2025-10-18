@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { PlusIcon, ArrowsUpDownIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowsUpDownIcon, Cog6ToothIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import TokenSelector from './TokenSelector';
 import AmountInput from './AmountInput';
@@ -7,7 +7,7 @@ import SwapRoute from './SwapRoute';
 import SimpleBatchSwapButton from './SimpleBatchSwapButton';
 import { SwapRoute as SwapRouteType, Token } from '@/types';
 import { BASE_TOKENS } from '@/lib/wagmi';
-import { simpleSwapService } from '@/lib/simple-swap';
+import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
 
 const SwapInterface: React.FC = () => {
   const [routes, setRoutes] = useState<SwapRouteType[]>([
@@ -16,23 +16,51 @@ const SwapInterface: React.FC = () => {
       to: { ...BASE_TOKENS[1], amount: '' },
     }
   ]);
+  const [currentRouteIndex, setCurrentRouteIndex] = useState(0);
   const [slippage, setSlippage] = useState(1);
   const [deadline, setDeadline] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
-  const features = simpleSwapService.getFeatures();
+  const features = oneInchLimitOrderService.getFeatures();
+
+  // Keyboard navigation
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return; // Don't interfere with input fields
+      
+      if (e.key === 'ArrowLeft') {
+        setCurrentRouteIndex(prev => Math.max(0, prev - 1));
+      } else if (e.key === 'ArrowRight') {
+        setCurrentRouteIndex(prev => Math.min(routes.length - 1, prev + 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [routes.length]);
 
   const addRoute = useCallback(() => {
-    setRoutes(prev => [...prev, {
-      from: { ...BASE_TOKENS[0], amount: '' },
-      to: { ...BASE_TOKENS[1], amount: '' },
-    }]);
+    setRoutes(prev => {
+      const newRoutes = [...prev, {
+        from: { ...BASE_TOKENS[0], amount: '' },
+        to: { ...BASE_TOKENS[1], amount: '' },
+      }];
+      // Automatically navigate to the new route
+      setCurrentRouteIndex(newRoutes.length - 1);
+      return newRoutes;
+    });
   }, []);
 
   const removeRoute = useCallback((index: number) => {
     if (routes.length > 1) {
       setRoutes(prev => prev.filter((_, i) => i !== index));
+      // Adjust current index if needed
+      if (currentRouteIndex >= index && currentRouteIndex > 0) {
+        setCurrentRouteIndex(currentRouteIndex - 1);
+      } else if (currentRouteIndex >= routes.length - 1) {
+        setCurrentRouteIndex(Math.max(0, routes.length - 2));
+      }
     }
-  }, [routes.length]);
+  }, [routes.length, currentRouteIndex]);
 
   const updateRoute = useCallback((index: number, updatedRoute: SwapRouteType) => {
     setRoutes(prev => prev.map((route, i) => i === index ? updatedRoute : route));
@@ -52,37 +80,40 @@ const SwapInterface: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="card">
+    <div className="max-w-xs sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto">
+      <div className="bg-white/20 dark:bg-black/20 backdrop-blur-xl rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 border border-white/30 dark:border-white/10 shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Multi-Token Swap</h1>
+        <div className="flex items-center justify-between mb-4 sm:mb-5 lg:mb-6">
+          <div>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Multi-Token Swap</h1>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">Execute multiple token swaps in one transaction</p>
+          </div>
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-2 sm:p-2.5 lg:p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/20 dark:hover:bg-white/10 rounded-lg lg:rounded-xl transition-all duration-200 backdrop-blur-sm"
           >
-            <Cog6ToothIcon className="w-6 h-6" />
+            <Cog6ToothIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
                 {/* API Status Info */}
                 {features.demoMode && (
-                  <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-yellow-800">Demo Mode Active</h3>
-                        <p className="text-sm text-yellow-700 mt-1">
+                  <div className="mb-4 sm:mb-5 lg:mb-6 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg lg:rounded-xl p-3 sm:p-4 transition-colors duration-300">
+                    <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-yellow-400 dark:bg-yellow-500 rounded-full animate-pulse mt-0.5 sm:mt-0 flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 transition-colors duration-300 text-sm sm:text-base">Demo Mode Active</h3>
+                        <p className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 mt-1 transition-colors duration-300 leading-relaxed">
                           Using mock data for demonstration. Get a
                           <a
                             href="https://portal.1inch.dev/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mx-1 underline hover:no-underline font-medium"
+                            className="mx-1 underline hover:no-underline font-medium text-yellow-800 dark:text-yellow-200 hover:text-yellow-600 dark:hover:text-yellow-100 transition-colors duration-200"
                           >
                             1inch API key
                           </a>
-                          for real swaps.
+                          for real swaps and limit orders.
                         </p>
                       </div>
                     </div>
@@ -96,22 +127,22 @@ const SwapInterface: React.FC = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-6 p-4 bg-gray-50 rounded-xl"
+              className="mb-4 sm:mb-5 lg:mb-6 p-3 sm:p-4 bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 rounded-lg lg:rounded-xl"
             >
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3 transition-colors duration-300">
                     Slippage Tolerance
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 sm:gap-2">
                     {[0.5, 1, 3].map(value => (
                       <button
                         key={value}
                         onClick={() => setSlippage(value)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                           slippage === value
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                            : 'bg-white/20 dark:bg-black/20 text-gray-700 dark:text-gray-300 border border-white/30 dark:border-white/20 hover:bg-white/30 dark:hover:bg-black/30 backdrop-blur-sm'
                         }`}
                       >
                         {value}%
@@ -121,7 +152,7 @@ const SwapInterface: React.FC = () => {
                       type="number"
                       value={slippage}
                       onChange={(e) => setSlippage(Number(e.target.value))}
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 border border-white/30 dark:border-white/20 bg-white/20 dark:bg-black/20 text-gray-900 dark:text-white rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm"
                       step="0.1"
                       min="0.1"
                       max="50"
@@ -129,19 +160,19 @@ const SwapInterface: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3 transition-colors duration-300">
                     Transaction Deadline
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <input
                       type="number"
                       value={deadline}
                       onChange={(e) => setDeadline(Number(e.target.value))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-20 sm:w-24 px-2 sm:px-3 py-1.5 sm:py-2 border border-white/30 dark:border-white/20 bg-white/20 dark:bg-black/20 text-gray-900 dark:text-white rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm transition-colors duration-300"
                       min="1"
                       max="4320"
                     />
-                    <span className="text-sm text-gray-500">minutes</span>
+                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">minutes</span>
                   </div>
                 </div>
               </div>
@@ -149,33 +180,154 @@ const SwapInterface: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Swap Routes */}
-        <div className="space-y-4 mb-6">
-          {routes.map((route, index) => (
-            <div key={index} className="relative">
-              <SwapRoute
-                route={route}
-                index={index}
-                onUpdate={(updatedRoute) => updateRoute(index, updatedRoute)}
-                onRemove={() => removeRoute(index)}
-                onSwap={() => swapTokens(index)}
-                canRemove={routes.length > 1}
-              />
+        {/* Swap Routes Carousel */}
+        <div className="mb-4 sm:mb-5 lg:mb-6">
+          {/* Route Navigation Header */}
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h3 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">
+                Swap Routes
+              </h3>
+              <div className="flex items-center gap-0.5 sm:gap-1">
+                {routes.map((_, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setCurrentRouteIndex(index)}
+                    className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300 ${
+                      currentRouteIndex === index 
+                        ? 'bg-blue-500 w-4 sm:w-6' 
+                        : 'bg-gray-300 dark:bg-gray-600 hover:bg-blue-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300 hidden sm:inline">
+                {currentRouteIndex + 1} of {routes.length}
+              </span>
             </div>
-          ))}
+            
+            {/* Navigation Arrows */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentRouteIndex(Math.max(0, currentRouteIndex - 1))}
+                disabled={currentRouteIndex === 0}
+                className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
+                  currentRouteIndex === 0
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/20 dark:hover:bg-white/10 backdrop-blur-sm'
+                }`}
+              >
+                <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentRouteIndex(Math.min(routes.length - 1, currentRouteIndex + 1))}
+                disabled={currentRouteIndex === routes.length - 1}
+                className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 ${
+                  currentRouteIndex === routes.length - 1
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/20 dark:hover:bg-white/10 backdrop-blur-sm'
+                }`}
+              >
+                <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Cards Container */}
+          <motion.div 
+            className="relative overflow-hidden rounded-xl lg:rounded-2xl"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            onDragEnd={(_, { offset, velocity }) => {
+              const swipe = Math.abs(offset.x) * velocity.x;
+              
+              if (swipe < -10000) {
+                // Swipe left (next route)
+                setCurrentRouteIndex(prev => Math.min(routes.length - 1, prev + 1));
+              } else if (swipe > 10000) {
+                // Swipe right (previous route)
+                setCurrentRouteIndex(prev => Math.max(0, prev - 1));
+              }
+            }}
+          >
+            <motion.div 
+              className="flex"
+              animate={{ x: -currentRouteIndex * 100 + '%' }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              {routes.map((route, index) => (
+                <div key={index} className="w-full flex-shrink-0">
+                  <motion.div
+                    initial={false}
+                    animate={{ 
+                      scale: currentRouteIndex === index ? 1 : 0.95,
+                      opacity: currentRouteIndex === index ? 1 : 0.7 
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="mx-1 sm:mx-2"
+                  >
+                    <SwapRoute
+                      route={route}
+                      index={index}
+                      onUpdate={(updatedRoute) => updateRoute(index, updatedRoute)}
+                      onRemove={() => removeRoute(index)}
+                      onSwap={() => swapTokens(index)}
+                      canRemove={routes.length > 1}
+                    />
+                  </motion.div>
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
         </div>
 
         {/* Add Route Button */}
-        <button
-          onClick={addRoute}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Add Another Swap
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+          <motion.button
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={addRoute}
+            className="flex-1 flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-4 sm:px-6 border-2 border-dashed border-white/30 dark:border-white/20 rounded-lg lg:rounded-xl text-gray-600 dark:text-gray-400 hover:border-blue-400/50 dark:hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-500/10 dark:hover:bg-blue-500/10 transition-all duration-300 group backdrop-blur-sm"
+          >
+            <motion.div
+              whileHover={{ rotate: 90 }}
+              transition={{ duration: 0.2 }}
+            >
+              <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            </motion.div>
+            <span className="font-medium text-sm sm:text-base">
+              <span className="hidden sm:inline">Add Another Swap Route</span>
+              <span className="sm:hidden">Add Route</span>
+            </span>
+            <motion.div
+              initial={{ x: 0 }}
+              animate={{ x: [0, 4, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block"
+            >
+              →
+            </motion.div>
+          </motion.button>
+          
+          {routes.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold shadow-lg backdrop-blur-sm whitespace-nowrap"
+            >
+              {routes.length} <span className="hidden sm:inline">Routes</span>
+            </motion.div>
+          )}
+        </div>
 
-        {/* Simple Batch Swap Button */}
-        <div className="mt-6">
+        {/* Batch Swap Button */}
+        <div className="mt-4 sm:mt-5 lg:mt-6">
           <SimpleBatchSwapButton
             routes={routes}
             slippage={slippage}

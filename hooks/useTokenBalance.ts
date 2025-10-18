@@ -1,5 +1,6 @@
 import { useAccount, useBalance, useReadContract } from 'wagmi';
 import { useEffect, useMemo, useState } from 'react';
+import { formatUnits } from 'viem';
 import type { Token } from '@/types';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
@@ -40,15 +41,48 @@ export function useTokenBalance(token: Token | null) {
     },
   });
 
-  const { formatted, value, isLoading, error } = useMemo(() => {
-    if (!mounted || !token) return { formatted: '0.00', value: null, isLoading: false, error: null as any };
+  const { formatted, rawFormatted, value, isLoading, error } = useMemo(() => {
+    if (!mounted || !token) return { formatted: '0.00', rawFormatted: '0', value: null, isLoading: false, error: null as any };
 
     if (isNative) {
       const v = native.data?.value ?? null;
       const d = native.data?.decimals ?? token.decimals ?? 18;
-      const num = v ? Number(v) / 10 ** d : 0;
+      
+      if (!v || v === BigInt(0)) {
+        return {
+          formatted: '0.00',
+          rawFormatted: '0',
+          value: v ?? null,
+          isLoading: native.isLoading,
+          error: native.error ?? null,
+        };
+      }
+      
+      const formattedValue = formatUnits(v, d);
+      const num = parseFloat(formattedValue);
+      
+      // Better formatting for different number ranges
+      let formatted: string;
+      if (num === 0) {
+        formatted = '0.00';
+      } else if (num < 0.000001) {
+        formatted = '< 0.000001';
+      } else if (num < 0.01) {
+        formatted = num.toFixed(6);
+      } else if (num < 1) {
+        formatted = num.toFixed(4);
+      } else if (num < 1000) {
+        formatted = num.toFixed(2);
+      } else {
+        formatted = num.toLocaleString(undefined, { 
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+      
       return {
-        formatted: num.toLocaleString(undefined, { maximumFractionDigits: 4 }),
+        formatted,
+        rawFormatted: formattedValue,
         value: v ?? null,
         isLoading: native.isLoading,
         error: native.error ?? null,
@@ -57,16 +91,49 @@ export function useTokenBalance(token: Token | null) {
 
     const v = (erc20.data as bigint | undefined) ?? null;
     const d = token.decimals ?? 18;
-    const num = v ? Number(v) / 10 ** d : 0;
+    
+    if (!v || v === BigInt(0)) {
+      return {
+        formatted: '0.00',
+        rawFormatted: '0',
+        value: v,
+        isLoading: erc20.isLoading,
+        error: erc20.error ?? null,
+      };
+    }
+    
+    const formattedValue = formatUnits(v, d);
+    const num = parseFloat(formattedValue);
+    
+    // Better formatting for different number ranges
+    let formatted: string;
+    if (num === 0) {
+      formatted = '0.00';
+    } else if (num < 0.000001) {
+      formatted = '< 0.000001';
+    } else if (num < 0.01) {
+      formatted = num.toFixed(6);
+    } else if (num < 1) {
+      formatted = num.toFixed(4);
+    } else if (num < 1000) {
+      formatted = num.toFixed(2);
+    } else {
+      formatted = num.toLocaleString(undefined, { 
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+    
     return {
-      formatted: num.toLocaleString(undefined, { maximumFractionDigits: 4 }),
+      formatted,
+      rawFormatted: formattedValue,
       value: v,
       isLoading: erc20.isLoading,
       error: erc20.error ?? null,
     };
   }, [mounted, token, isNative, native.data, native.isLoading, native.error, erc20.data, erc20.isLoading, erc20.error]);
 
-  return { formatted, value, isLoading, error };
+  return { formatted, rawFormatted, value, isLoading, error };
 }
 
 
