@@ -7,18 +7,20 @@ A revolutionary DeFi protocol that enables batch swapping of multiple tokens in 
 ## ✨ Features
 
 - **🔄 Batch Swaps**: Execute multiple token swaps in one transaction using EIP-5792 sendCalls
+- **⚡ Gasless Transactions**: Free swaps powered by 1inch Fusion SDK (no gas fees!)
 - **⏰ Limit Orders**: Set price targets and trade automatically with 1inch integration
+- **🚀 Dual Mode**: Choose between Fusion (gasless) or Standard (with gas) batch swaps
 - **⚡ Base Optimized**: Built specifically for Base mainnet with low fees
-- **🎨 Beautiful UI**: Modern, responsive interface inspired by bebop.xyz
+- **🎨 Beautiful UI**: Modern, responsive interface with real-time order tracking
 - **🔐 Secure**: Non-custodial, decentralized trading
 
 ## 🛠 Tech Stack
 
 - **Frontend**: Next.js, React, TypeScript, Tailwind CSS, Framer Motion
-- **Web3**: Wagmi, Viem, RainbowKit
-- **Swapping**: 1inch API/SDK, 1inch Fusion SDK
-- **Blockchain**: Base Mainnet
-- **Batch Transactions**: EIP-5792 sendCalls
+- **Web3**: Wagmi v2, Viem, RainbowKit
+- **Swapping**: 1inch Fusion SDK (gasless), 1inch Limit Order SDK
+- **Blockchain**: Base Mainnet (Chain ID: 8453)
+- **Batch Transactions**: EIP-5792 sendCalls + Fusion Resolvers
 
 ## 🚀 Quick Start
 
@@ -67,14 +69,20 @@ A revolutionary DeFi protocol that enables batch swapping of multiple tokens in 
    - Copy the Project ID
    - **Required for wallet connections**
 
-2. **1inch API Key** (OPTIONAL)
+2. **1inch API Key** (REQUIRED for full features)
    - Go to https://portal.1inch.dev/
    - Create an account and generate API key
-   - **App works without API key** but with limitations:
-     - ✅ Batch swaps work perfectly
-     - ✅ Token quotes available
-     - ❌ Limit orders require API key
-     - ⚠️ Rate limited to 1 request/second
+   - **Features availability**:
+     - ✅ **With API Key**: 
+       - Gasless swaps via Fusion SDK (no gas fees!)
+       - Real-time quotes and optimal routing
+       - Limit orders functionality
+       - High rate limits
+     - ⚠️ **Without API Key** (Demo Mode):
+       - Basic batch swaps work
+       - Simulated quotes
+       - Limited functionality
+       - Rate limited
 
 ### 🚀 Quick Start (No API Key Needed!)
 
@@ -103,42 +111,69 @@ You can run the app immediately without any API keys:
 
 ## 🎯 How It Works
 
-### Batch Swaps
+### Fusion Batch Swaps (Gasless ⚡)
 1. Add multiple token swap routes
 2. Configure slippage and deadline
+3. Select **Fusion Mode** (enabled by default)
+4. Click "Swap Multiple Tokens (Gasless ⚡)"
+5. Create Fusion orders - resolvers execute them for free!
+6. Track order status in real-time
+
+**How Gasless Works:**
+- Creates off-chain orders through 1inch Fusion SDK
+- Resolvers (third-party relayers) execute orders
+- Resolvers pay gas fees and take small commission
+- You pay ZERO gas fees!
+
+### Standard Batch Swaps (With Gas)
+1. Add multiple token swap routes
+2. Select **Standard Mode**
 3. Click "Swap Multiple Tokens"
-4. Approve tokens if needed (batched with swaps)
-5. Execute all swaps in one transaction
+4. Uses EIP-5792 sendCalls for batch transactions
+5. Approve tokens if needed (batched with swaps)
+6. Execute all swaps in one transaction
 
 ### Limit Orders
 1. Go to "Limit Orders" tab
 2. Set sell token and amount
 3. Set minimum buy token amount
-4. Create limit order
+4. Create limit order via 1inch Limit Order SDK
 5. Order executes automatically when price target is met
 
 ## 🏗 Architecture
 
 ```
-├── components/          # React components
-│   ├── SwapInterface.tsx    # Main swap interface
-│   ├── SwapRoute.tsx        # Individual swap route
-│   ├── TokenSelector.tsx    # Token selection modal
-│   ├── AmountInput.tsx      # Amount input with validation
-│   ├── BatchSwapButton.tsx  # Batch execution button
-│   └── LimitOrdersPanel.tsx # Limit orders interface
-├── hooks/              # Custom React hooks
-│   ├── useBatchSwap.ts     # Batch swap functionality
-│   └── useLimitOrders.ts   # Limit orders management
-├── lib/                # Utilities and configurations
-│   ├── wagmi.ts           # Wagmi configuration
-│   └── 1inch.ts          # 1inch API integration
-├── pages/              # Next.js pages
-│   ├── _app.tsx          # App wrapper with providers
-│   └── index.tsx         # Main page
-└── types/              # TypeScript type definitions
-    └── index.ts
+├── components/                # React components
+│   ├── SwapInterface.tsx         # Main swap interface
+│   ├── SwapRoute.tsx             # Individual swap route
+│   ├── TokenSelector.tsx         # Token selection modal
+│   ├── AmountInput.tsx           # Amount input with validation
+│   ├── BatchSwapButton.tsx       # Batch execution (Fusion + Standard)
+│   └── LimitOrdersPanel.tsx      # Limit orders interface
+├── hooks/                     # Custom React hooks
+│   ├── useBatchSwap.ts           # Dual-mode batch swap (Fusion/Standard)
+│   ├── useLimitOrders.ts         # Limit orders management
+│   └── useTokenBalance.ts        # Token balance tracking
+├── lib/                       # Services and utilities
+│   ├── wagmi.ts                  # Wagmi v2 configuration
+│   ├── 1inch-fusion.ts           # Fusion SDK service (gasless)
+│   ├── 1inch-limit-order.ts      # Limit Order SDK service
+│   ├── fusion-utils.ts           # Fusion helper utilities
+│   └── 1inch-sdk.ts              # Legacy SDK wrapper
+├── pages/                     # Next.js pages
+│   ├── _app.tsx                  # App wrapper with providers
+│   ├── index.tsx                 # Main swap page
+│   └── api/1inch/[...path].ts    # 1inch API proxy
+└── types/                     # TypeScript definitions
+    └── index.ts                  # Shared types
 ```
+
+### Key Components
+
+- **`lib/1inch-fusion.ts`**: Fusion SDK integration for gasless swaps
+- **`lib/fusion-utils.ts`**: Helper functions for Fusion orders
+- **`hooks/useBatchSwap.ts`**: Dual-mode hook (Fusion/Standard)
+- **`components/BatchSwapButton.tsx`**: Smart button with mode selection
 
 ## 🔐 Security Features
 
@@ -222,10 +257,19 @@ MIT License - see LICENSE file for details
 
 ### Key Innovations
 
-1. **Batch Swapping**: First implementation of EIP-5792 sendCalls for DeFi
-2. **Gas Optimization**: Significant gas savings through transaction batching
-3. **UX Innovation**: Seamless multi-token trading experience
-4. **Base Integration**: Native optimization for Base ecosystem
+1. **Gasless Batch Swaps**: Revolutionary implementation of 1inch Fusion SDK for batch swaps with ZERO gas fees
+2. **Dual-Mode Architecture**: Flexible switching between Fusion (gasless) and Standard (EIP-5792 sendCalls) modes
+3. **Smart Order Routing**: Automatic optimal routing through Fusion resolvers
+4. **UX Innovation**: Seamless multi-token trading with real-time order tracking
+5. **Base Integration**: Native optimization for Base ecosystem with low latency
+
+### Technical Highlights
+
+- **1inch Fusion SDK**: Leverages off-chain orders executed by resolvers
+- **EIP-5792 sendCalls**: Batch transaction standard for on-chain swaps
+- **Wagmi v2**: Modern Web3 React hooks with sendCalls support
+- **TypeScript**: Full type safety across the entire stack
+- **Real-time Updates**: Live order status tracking for Fusion orders
 
 ## 📞 Support
 

@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TokenSelector from './TokenSelector';
 import AmountInput from './AmountInput';
 import SwapRoute from './SwapRoute';
-import BatchSwapButton from './BatchSwapButton';
+import SimpleBatchSwapButton from './SimpleBatchSwapButton';
 import { SwapRoute as SwapRouteType, Token } from '@/types';
 import { BASE_TOKENS } from '@/lib/wagmi';
-import { oneInchLimitOrderService } from '@/lib/1inch-limit-order';
+import { simpleSwapService } from '@/lib/simple-swap';
 
 const SwapInterface: React.FC = () => {
   const [routes, setRoutes] = useState<SwapRouteType[]>([
@@ -19,7 +19,7 @@ const SwapInterface: React.FC = () => {
   const [slippage, setSlippage] = useState(1);
   const [deadline, setDeadline] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
-  const features = oneInchLimitOrderService.getFeatures();
+  const features = simpleSwapService.getFeatures();
 
   const addRoute = useCallback(() => {
     setRoutes(prev => [...prev, {
@@ -82,7 +82,7 @@ const SwapInterface: React.FC = () => {
                           >
                             1inch API key
                           </a>
-                          for real swaps and limit orders.
+                          for real swaps.
                         </p>
                       </div>
                     </div>
@@ -174,9 +174,9 @@ const SwapInterface: React.FC = () => {
           Add Another Swap
         </button>
 
-        {/* Batch Swap Button */}
+        {/* Simple Batch Swap Button */}
         <div className="mt-6">
-          <BatchSwapButton
+          <SimpleBatchSwapButton
             routes={routes}
             slippage={slippage}
             deadline={deadline}

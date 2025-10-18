@@ -17,12 +17,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const headers: Record<string, string> = { accept: 'application/json' };
   
-  // Добавляем API ключ только для эндпоинтов, которые его требуют (limit orders)
+  // Добавляем API ключ для всех эндпоинтов, которые его поддерживают
   const pathString = path.join('/');
-  const requiresAuth = pathString.includes('orderbook') || pathString.includes('v6.0');
+  const supportsAuth = pathString.includes('orderbook') || pathString.includes('v6.0') || 
+                      pathString.includes('swap') || pathString.includes('quote');
   
-  if (requiresAuth && apiKey && apiKey !== 'your_1inch_api_key') {
+  if (supportsAuth && apiKey && apiKey !== 'your_1inch_api_key') {
     headers['Authorization'] = `Bearer ${apiKey}`;
+    console.log('🔑 Adding API key to request:', pathString);
+  } else if (supportsAuth) {
+    console.log('⚠️ No API key for request:', pathString);
   }
 
   const init: RequestInit = {

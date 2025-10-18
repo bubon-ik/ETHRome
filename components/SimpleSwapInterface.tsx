@@ -1,83 +1,190 @@
-import React, { useState } from 'react';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import React, { useState, useCallback } from 'react';
+import { PlusIcon, ArrowsUpDownIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import TokenSelector from './TokenSelector';
+import AmountInput from './AmountInput';
+import SwapRoute from './SwapRoute';
+import SimpleBatchSwapButton from './SimpleBatchSwapButton';
+import { SwapRoute as SwapRouteType, Token } from '@/types';
+import { BASE_TOKENS } from '@/lib/wagmi';
+import { simpleSwapService } from '@/lib/simple-swap';
 
 const SimpleSwapInterface: React.FC = () => {
-  const [routes, setRoutes] = useState([{ id: 1 }]);
+  const [routes, setRoutes] = useState<SwapRouteType[]>([
+    {
+      from: { ...BASE_TOKENS[0], amount: '' },
+      to: { ...BASE_TOKENS[1], amount: '' },
+    }
+  ]);
+  const [slippage, setSlippage] = useState(1);
+  const [deadline, setDeadline] = useState(20);
+  const [showSettings, setShowSettings] = useState(false);
+  const features = simpleSwapService.getFeatures();
+
+  const addRoute = useCallback(() => {
+    setRoutes(prev => [...prev, {
+      from: { ...BASE_TOKENS[0], amount: '' },
+      to: { ...BASE_TOKENS[1], amount: '' },
+    }]);
+  }, []);
+
+  const removeRoute = useCallback((index: number) => {
+    if (routes.length > 1) {
+      setRoutes(prev => prev.filter((_, i) => i !== index));
+    }
+  }, [routes.length]);
+
+  const updateRoute = useCallback((index: number, updatedRoute: SwapRouteType) => {
+    setRoutes(prev => prev.map((route, i) => i === index ? updatedRoute : route));
+  }, []);
+
+  const swapTokens = useCallback((index: number) => {
+    setRoutes(prev => prev.map((route, i) => {
+      if (i === index) {
+        return {
+          ...route,
+          from: { ...route.to, amount: route.from.amount },
+          to: { ...route.from, amount: route.to.amount },
+        };
+      }
+      return route;
+    }));
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Multi-Token Swap</h1>
-        
-        {/* Test Route */}
-        <div className="space-y-4 mb-6">
-          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-            <h3 className="text-sm font-medium text-gray-600 mb-4">Swap #1</h3>
-            
-            {/* From Token */}
-            <div className="bg-white rounded-xl p-4 border border-gray-200 mb-3">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-600">From</span>
-                <span className="text-xs text-gray-400">Balance: 0.00</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-xl">
-                  <span className="font-semibold">ETH</span>
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="0.0"
-                  className="flex-1 bg-transparent text-right text-lg font-semibold outline-none"
-                />
-              </div>
-            </div>
+      <div className="card">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Simple Multi-Token Swap</h1>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <Cog6ToothIcon className="w-6 h-6" />
+          </button>
+        </div>
 
-            {/* Swap Arrow */}
-            <div className="flex justify-center mb-3">
-              <button className="p-2 bg-white border-2 border-gray-200 rounded-full">
-                ↕️
-              </button>
-            </div>
-
-            {/* To Token */}
-            <div className="bg-white rounded-xl p-4 border border-gray-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-600">To</span>
-                <span className="text-xs text-gray-400">Balance: 0.00</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-xl">
-                  <span className="font-semibold">USDC</span>
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="0.0"
-                  className="flex-1 bg-transparent text-right text-lg font-semibold outline-none"
-                  readOnly
-                />
+        {/* Service Status Info */}
+        {features.demoMode && (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-yellow-800">Demo Mode Active</h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Using mock data for demonstration. Get a
+                  <a
+                    href="https://portal.1inch.dev/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mx-1 underline hover:no-underline font-medium"
+                  >
+                    1inch API key
+                  </a>
+                  for real swaps.
+                </p>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Settings Panel */}
+        <AnimatePresence>
+          {showSettings && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-6 p-4 bg-gray-50 rounded-xl"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Slippage Tolerance
+                  </label>
+                  <div className="flex gap-2">
+                    {[0.5, 1, 3].map(value => (
+                      <button
+                        key={value}
+                        onClick={() => setSlippage(value)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          slippage === value
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {value}%
+                      </button>
+                    ))}
+                    <input
+                      type="number"
+                      value={slippage}
+                      onChange={(e) => setSlippage(Number(e.target.value))}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      step="0.1"
+                      min="0.1"
+                      max="50"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Transaction Deadline
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={deadline}
+                      onChange={(e) => setDeadline(Number(e.target.value))}
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      min="1"
+                      max="4320"
+                    />
+                    <span className="text-sm text-gray-500">minutes</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Swap Routes */}
+        <div className="space-y-4 mb-6">
+          {routes.map((route, index) => (
+            <div key={index} className="relative">
+              <SwapRoute
+                route={route}
+                index={index}
+                onUpdate={(updatedRoute) => updateRoute(index, updatedRoute)}
+                onRemove={() => removeRoute(index)}
+                onSwap={() => swapTokens(index)}
+                canRemove={routes.length > 1}
+              />
+            </div>
+          ))}
         </div>
 
         {/* Add Route Button */}
-        <button 
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors mb-6"
+        <button
+          onClick={addRoute}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors"
         >
           <PlusIcon className="w-5 h-5" />
           Add Another Swap
         </button>
 
-        {/* Swap Button */}
-        <button className="w-full py-4 px-6 rounded-xl font-semibold text-lg bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200">
-          Connect Wallet
-        </button>
+        {/* Simple Batch Swap Button */}
+        <div className="mt-6">
+          <SimpleBatchSwapButton
+            routes={routes}
+            slippage={slippage}
+            deadline={deadline}
+          />
+        </div>
       </div>
     </div>
   );
 };
 
 export default SimpleSwapInterface;
-
-
-
