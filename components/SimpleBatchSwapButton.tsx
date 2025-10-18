@@ -139,8 +139,8 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
         <div className="flex items-center gap-2">
           <span className="text-lg">🔄</span>
           <div>
-            <div className="text-sm font-semibold text-blue-200">Simple Swap Mode</div>
-            <div className="text-xs text-blue-100/90">
+            <div className="text-sm font-semibold text-blue-900 dark:text-blue-200">Simple Swap Mode</div>
+            <div className="text-xs text-blue-800 dark:text-blue-100/90">
               Using 1inch API + wagmi sendCalls for batch swaps
             </div>
           </div>
@@ -179,30 +179,30 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
       {/* Error Display */}
       {error && (
         <div className="liquid-glass rounded-2xl p-4 bg-red-500/20 border border-red-400/30">
-          <p className="text-red-200 text-sm">{error}</p>
+          <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
         </div>
       )}
 
       {/* Success Display */}
       {isSuccess && txHash && (
         <div className="liquid-glass rounded-2xl p-4 bg-green-500/20 border border-green-400/30">
-          <p className="text-green-200 text-sm font-semibold mb-1">
+          <p className="text-green-800 dark:text-green-200 text-sm font-semibold mb-1">
             ✅ Batch Swap Successful!
           </p>
-          <p className="text-green-100 text-xs">
+          <p className="text-green-700 dark:text-green-100 text-xs">
             Transaction confirmed! 
             <a
               href={`https://basescan.org/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-1 underline hover:no-underline text-green-200"
+              className="ml-1 underline hover:no-underline text-green-800 dark:text-green-200"
             >
               View on BaseScan
             </a>
           </p>
           {batchId && (
-            <p className="text-green-100 text-xs mt-1">
-              Batch ID: <span className="font-mono text-green-200">{batchId}</span>
+            <p className="text-green-700 dark:text-green-100 text-xs mt-1">
+              Batch ID: <span className="font-mono text-green-800 dark:text-green-200">{batchId}</span>
             </p>
           )}
         </div>

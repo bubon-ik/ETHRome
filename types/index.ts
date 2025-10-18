@@ -108,5 +108,49 @@ export interface TokenListParams {
   provider?: string;
 }
 
+// 1inch Portfolio API types
+export interface PortfolioToken {
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  logoURI?: string;
+  balance: string;
+  balanceFormatted: string;
+  price: number;
+  value: number;
+  valueFormatted: string;
+  change24h?: number;
+  change24hPercent?: number;
+}
+
+export interface PortfolioSummary {
+  totalValue: number;
+  totalValueFormatted: string;
+  change24h: number;
+  change24hPercent: number;
+  tokenCount: number;
+  currency: string;
+}
+
+export interface PortfolioHistory {
+  timestamp: number;
+  value: number;
+  change: number;
+}
+
+export interface PortfolioData {
+  tokens: PortfolioToken[];
+  summary: PortfolioSummary;
+  history?: PortfolioHistory[];
+}
+
+export interface PortfolioParams {
+  chainId: number;
+  address: string;
+  currency?: string;
+  period?: string;
+}
+
 
 
