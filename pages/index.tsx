@@ -10,13 +10,11 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import SwapInterface from '@/components/SwapInterface';
-import SimpleSwapInterface from '@/components/SimpleSwapInterface';
 import LimitOrdersPanel from '@/components/LimitOrdersPanel';
 import DarkModeToggle from '@/components/DarkModeToggle';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'swap' | 'orders' | 'analytics'>('swap');
-  const [swapMode, setSwapMode] = useState<'fusion' | 'simple'>('simple');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const { address, isConnected } = useAccount();
@@ -209,34 +207,7 @@ export default function Home() {
           >
             {activeTab === 'swap' && (
               <div className="space-y-6">
-                {/* Swap Mode Selector */}
-                <div className="flex justify-center">
-                  <div className="bg-gray-100 rounded-xl p-1 flex">
-                    <button
-                      onClick={() => setSwapMode('simple')}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                        swapMode === 'simple'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      🔄 Simple Swap
-                    </button>
-                    <button
-                      onClick={() => setSwapMode('fusion')}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                        swapMode === 'fusion'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      ⚡ Fusion (Gasless)
-                    </button>
-                  </div>
-                </div>
-
-                {/* Swap Interface */}
-                {swapMode === 'simple' ? <SimpleSwapInterface /> : <SwapInterface />}
+                <SwapInterface />
               </div>
             )}
             {activeTab === 'orders' && <LimitOrdersPanel />}

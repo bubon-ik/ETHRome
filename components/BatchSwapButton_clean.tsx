@@ -10,16 +10,15 @@ interface BatchSwapButtonProps {
   routes: SwapRoute[];
   slippage: number;
   deadline: number;
-  // mode removed - ONLY Fusion (gasless) mode supported
+  mode?: SwapMode; // 'fusion' для gasless, 'standard' для обычного
 }
 
 const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
   routes,
   slippage,
   deadline,
+  mode = 'fusion', // По умолчанию gasless режим
 }) => {
-  // ONLY Fusion (gasless) mode - no mode switching allowed
-  const mode = 'fusion';
   const { address } = useAccount();
   const { 
     executeBatchSwap, 
@@ -28,7 +27,8 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
     txHash, 
     batchId,
     fusionOrders,
-    isSuccess
+    isSuccess,
+    mode: currentMode 
   } = useBatchSwap();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [totalGas, setTotalGas] = useState<string>('0');
@@ -64,11 +64,11 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
                 
                 if (mode === 'fusion') {
                   // Используем Fusion SDK для gasless котировок
-                  const quote = await fusionService.getFusionQuote({
-                    fromTokenAddress: route.from.address || '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    toTokenAddress: route.to.address || '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                  const quote = await fusionService.getQuote({
+                    srcToken: route.from.address || '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    dstToken: route.to.address || '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
                     amount: amount.toString(),
-                    walletAddress: address || '0x1234567890123456789012345678901234567890'
+                    from: address || '0x1234567890123456789012345678901234567890'
                   });
                   
                   return {
@@ -137,13 +137,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
     if (!address || quotes.length === 0) return;
 
     try {
-      await executeBatchSwap({
-        routes: routes,
-        recipient: address,
-        slippage: slippage,
-        deadline: deadline,
-        mode: mode
-      });
+      await executeBatchSwap(routes, slippage, deadline, mode);
     } catch (error) {
       console.error('Swap failed:', error);
     }
@@ -164,16 +158,50 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
       return 'Enter Amount';
     }
     const count = routes.filter(r => r.from.amount && parseFloat(r.from.amount) > 0).length;
-    return `Swap ${count} Token${count !== 1 ? 's' : ''}`;
+    const modeLabel = mode === 'fusion' ? ' (Gasless ⚡)' : '';
+    return `Swap ${count} Token${count !== 1 ? 's' : ''}${modeLabel}`;
   };
 
   return (
     <div className="space-y-4">
+      {/* Mode Indicator */}
+      {mode === 'fusion' && (
+        <div className="bg-gradient-to-r from-blue-50/80 to-purple-50/80 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-3 backdrop-blur-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">⚡</span>
+              <div>
+                <div className="text-sm font-semibold text-blue-900 dark:text-blue-200">Gasless Mode (Fusion)</div>
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  {fusionStatus === 'loading' && '🔄 Checking Fusion SDK...'}
+                  {fusionStatus === 'working' && '✅ Fusion SDK active - Real gasless swaps!'}
+                  {fusionStatus === 'demo' && '📝 Demo mode - Simulated gasless swaps'}
+                  {fusionStatus === 'error' && '⚠️ Fallback mode - Using demo quotes'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowFusionInfo(!showFusionInfo)}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 text-xs underline"
+            >
+              {showFusionInfo ? 'Hide' : 'Info'}
+            </button>
+          </div>
+          {showFusionInfo && (
+            <div className="mt-2 text-xs text-blue-800 dark:text-blue-200 border-t border-blue-200 dark:border-blue-700 pt-2">
+              {fusionStatus === 'working' && 'Fusion SDK работает! Создаются реальные off-chain orders которые выполняются resolvers.'}
+              {fusionStatus === 'demo' && 'Fusion SDK в demo режиме. Показываются симулированные котировки и orders.'}
+              {fusionStatus === 'error' && 'Fusion SDK недоступен. Используется fallback режим с demo котировками.'}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Swap Summary */}
       {quotes.length > 0 && (
         <div className="bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Swap Summary
+            {mode === 'fusion' ? 'Fusion Orders Preview' : 'Swap Summary'}
           </h3>
           <div className="space-y-2">
             {quotes.map((quote, index) => (
@@ -189,10 +217,10 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
             <div className="pt-2 border-t border-white/20 dark:border-white/10">
               <div className="flex justify-between items-center text-xs sm:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">
-                  Gas Fee
+                  {mode === 'fusion' ? 'Gas Fee' : 'Total Gas (est.)'}
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  FREE ⚡
+                  {mode === 'fusion' ? 'FREE ⚡' : `${totalGas} GWEI`}
                 </span>
               </div>
             </div>
@@ -209,7 +237,7 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
           <div className="space-y-2 text-xs text-green-800 dark:text-green-200">
             {fusionOrders.map((order, index) => (
               <div key={index} className="font-mono bg-green-100/50 dark:bg-green-900/30 p-2 rounded">
-                Order {index + 1}: {order.order.orderHash?.substring(0, 20)}...
+                Order {index + 1}: {order.orderHash?.substring(0, 20)}...
               </div>
             ))}
             <p className="text-green-700 dark:text-green-300 text-xs mt-2">
@@ -223,7 +251,17 @@ const BatchSwapButton: React.FC<BatchSwapButtonProps> = ({
       {isSuccess && txHash && (
         <div className="bg-green-500/20 border border-green-500/30 rounded-lg sm:rounded-xl p-3 sm:p-4 backdrop-blur-sm">
           <p className="text-green-700 dark:text-green-300 text-xs sm:text-sm">
-            ⚡ Fusion Orders Submitted!
+            {mode === 'fusion' ? '⚡ Fusion Orders Submitted!' : '✅ Batch Swap Successful!'}
+            {mode !== 'fusion' && (
+              <a
+                href={`https://basescan.org/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-1 underline hover:no-underline font-medium"
+              >
+                View on BaseScan
+              </a>
+            )}
           </p>
         </div>
       )}

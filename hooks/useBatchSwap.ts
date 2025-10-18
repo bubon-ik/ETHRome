@@ -50,7 +50,7 @@ export function useBatchSwap(): UseBatchSwapReturn {
   const [batchId, setBatchId] = useState<string | null>(null);
   const [fusionOrders, setFusionOrders] = useState<BatchSwapOrder[]>([]);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [mode, setMode] = useState<SwapMode>('standard');
+  const [mode, setMode] = useState<SwapMode>('fusion');
 
   const { data: transactionReceipt } = useWaitForTransactionReceipt({
     hash: txHash as `0x${string}` | undefined,
