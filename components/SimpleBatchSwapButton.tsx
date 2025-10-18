@@ -5,6 +5,7 @@ import { SwapRoute } from '@/types';
 import { useSimpleBatchSwap } from '@/hooks/useSimpleBatchSwap';
 import { simpleSwapService } from '@/lib/simple-swap';
 import { UserIcon } from '@heroicons/react/24/outline';
+import { useBaseEnsAddress } from '@/hooks/useBaseEns';
 
 interface SimpleBatchSwapButtonProps {
     routes: SwapRoute[];
@@ -33,10 +34,15 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
     const [isGettingQuotes, setIsGettingQuotes] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [lastSwapTime, setLastSwapTime] = useState(0);
-    const [recipientAddress, setRecipientAddress] = useState<string>('');
+    const [recipientInput, setRecipientInput] = useState<string>('');
     const [showRecipientField, setShowRecipientField] = useState(false);
 
-    // Избегаем hydration mismatch
+    const isEnsName = recipientInput.endsWith('.eth');
+    const {
+        data: resolvedAddress,
+        isLoading: isResolvingEns,
+        error: ensError
+    } = useBaseEnsAddress(recipientInput);    // Избегаем hydration mismatch
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -148,8 +154,8 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
         }
 
         // Determine recipient - use custom address if valid, otherwise use connected wallet address
-        const recipient = showRecipientField && recipientAddress && isAddress(recipientAddress)
-            ? recipientAddress
+        const recipient = showRecipientField && (resolvedAddress || (isAddress(recipientInput) ? recipientInput : null))
+            ? (resolvedAddress || recipientInput)
             : address;
 
         await executeBatchSwap({
@@ -164,7 +170,8 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
         !routes.some(route => route.from.amount && parseFloat(route.from.amount) > 0) ||
         isLoading ||
         isGettingQuotes ||
-        (showRecipientField && !!recipientAddress && !isAddress(recipientAddress));
+        (showRecipientField && !!recipientInput && !isAddress(recipientInput) && !isResolvingEns && !resolvedAddress) ||
+        (showRecipientField && isResolvingEns);
 
     const getButtonText = () => {
         if (!mounted) return 'Loading...';
@@ -178,7 +185,7 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
         const count = routes.filter(r => r.from.amount && parseFloat(r.from.amount) > 0).length;
         const baseText = `Swap ${count} Token${count !== 1 ? 's' : ''}`;
 
-        if (showRecipientField && recipientAddress && isAddress(recipientAddress)) {
+        if (showRecipientField && (resolvedAddress || (recipientInput && isAddress(recipientInput)))) {
             return `${baseText} to Recipient`;
         }
 
@@ -221,7 +228,7 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                             onChange={() => {
                                 setShowRecipientField(!showRecipientField);
                                 if (!showRecipientField) {
-                                    setRecipientAddress('');
+                                    setRecipientInput('');
                                 }
                             }}
                             className="absolute block w-6 h-6 rounded-full bg-white dark:bg-gray-200 border-4 border-gray-300 dark:border-gray-600 appearance-none cursor-pointer transition-transform duration-300 ease-in checked:translate-x-full checked:border-blue-500 dark:checked:border-blue-400 z-10"
@@ -241,27 +248,35 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                             </div>
                             <input
                                 type="text"
-                                placeholder="Enter Base recipient address (0x...)"
-                                value={recipientAddress}
-                                onChange={(e) => setRecipientAddress(e.target.value)}
+                                placeholder="Enter Base recipient address or ENS name (.eth)"
+                                value={recipientInput}
+                                onChange={(e) => setRecipientInput(e.target.value)}
                                 className="w-full pl-10 pr-3 py-2.5 border border-white/30 dark:border-white/20 bg-white/20 dark:bg-black/20 text-gray-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm transition-colors duration-300"
                             />
                         </div>
-                        {recipientAddress && !isAddress(recipientAddress) && (
-                            <p className="text-xs text-red-600 dark:text-red-400 mt-1.5 flex items-center">
-                                <span className="mr-1">⚠️</span> Please enter a valid Base address
+                        {isResolvingEns && (
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1.5 flex items-center">
+                                <span className="mr-1">Resolving ENS name...</span>
                             </p>
                         )}
-                        {recipientAddress && isAddress(recipientAddress) && (
+                        {recipientInput && !isAddress(recipientInput) && !isEnsName && (
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1.5 flex items-center">
+                                <span className="mr-1">⚠️</span> Please enter a valid Base address or ENS name
+                            </p>
+                        )}
+                        {ensError && isEnsName && (
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1.5 flex items-center">
+                                <span className="mr-1">⚠️</span> Could not resolve ENS name: {ensError.message}
+                            </p>
+                        )}
+                        {(resolvedAddress || (recipientInput && isAddress(recipientInput) && !isEnsName)) && (
                             <p className="text-xs text-green-600 dark:text-green-400 mt-1.5 flex items-center">
-                                <span className="mr-1">✓</span> Valid Base address
+                                <span className="mr-1">✓</span> Valid recipient: {resolvedAddress ? `${recipientInput} -> ${resolvedAddress.slice(0, 6)}...${resolvedAddress.slice(-4)}` : `${recipientInput.slice(0, 6)}...${recipientInput.slice(-4)}`}
                             </p>
                         )}
                     </div>
                 )}
-            </div>
-
-            {/* Swap Summary */}
+            </div>            {/* Swap Summary */}
             {quotes.length > 0 && (
                 <div className="liquid-glass rounded-2xl p-4 bg-glass-white-5">
                     <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-3">Swap Summary</h3>
@@ -293,8 +308,8 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
             {/* Error/Cancellation Display */}
             {error && (
                 <div className={`liquid-glass rounded-2xl p-4 border ${error.includes('cancelled') || error.includes('canceled')
-                        ? 'bg-orange-500/20 border-orange-400/30' // Orange for cancellations
-                        : 'bg-red-500/20 border-red-400/30' // Red for actual errors
+                    ? 'bg-orange-500/20 border-orange-400/30' // Orange for cancellations
+                    : 'bg-red-500/20 border-red-400/30' // Red for actual errors
                     }`}>
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2 flex-1">
@@ -302,8 +317,8 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                                 {error.includes('cancelled') || error.includes('canceled') ? '🚫' : '⚠️'}
                             </span>
                             <div className={`text-sm ${error.includes('cancelled') || error.includes('canceled')
-                                    ? 'text-orange-800 dark:text-orange-200'
-                                    : 'text-red-800 dark:text-red-200'
+                                ? 'text-orange-800 dark:text-orange-200'
+                                : 'text-red-800 dark:text-red-200'
                                 }`}>
                                 <p className="font-semibold">{error}</p>
                                 {(error.includes('cancelled') || error.includes('canceled')) && (
@@ -316,8 +331,8 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                         <button
                             onClick={resetState}
                             className={`ml-2 hover:opacity-75 ${error.includes('cancelled') || error.includes('canceled')
-                                    ? 'text-orange-800 dark:text-orange-200'
-                                    : 'text-red-800 dark:text-red-200'
+                                ? 'text-orange-800 dark:text-orange-200'
+                                : 'text-red-800 dark:text-red-200'
                                 }`}
                             title="Dismiss notification"
                         >
@@ -344,10 +359,10 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                             View on BaseScan
                         </a>
                     </p>
-                    {showRecipientField && recipientAddress && isAddress(recipientAddress) && (
+                    {showRecipientField && (resolvedAddress || (recipientInput && isAddress(recipientInput))) && (
                         <p className="text-green-700 dark:text-green-100 text-xs mt-1">
                             Tokens sent to: <span className="font-mono text-green-800 dark:text-green-200">
-                                {recipientAddress.slice(0, 6)}...{recipientAddress.slice(-4)}
+                                {resolvedAddress ? `${recipientInput} (${resolvedAddress.slice(0, 6)}...${resolvedAddress.slice(-4)})` : recipientInput}
                             </span>
                         </p>
                     )}
@@ -364,8 +379,8 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
                 onClick={handleSwap}
                 disabled={isDisabled}
                 className={`w-full py-4 px-6 font-semibold text-lg transition-all duration-300 ${isDisabled
-                        ? 'liquid-glass bg-glass-white-5 text-gray-500 dark:text-white/50 cursor-not-allowed rounded-2xl'
-                        : 'liquid-glass-button hover:shadow-glass-lg'
+                    ? 'liquid-glass bg-glass-white-5 text-gray-500 dark:text-white/50 cursor-not-allowed rounded-2xl'
+                    : 'liquid-glass-button hover:shadow-glass-lg'
                     }`}
             >
                 {isLoading && (
