@@ -8,7 +8,7 @@
 import { useState, useCallback } from 'react';
 import { useAccount, useWaitForTransactionReceipt, usePublicClient } from 'wagmi';
 import { sendCalls, getCallsStatus, waitForCallsStatus } from '@wagmi/core';
-import { config } from '@/lib/wagmi';
+import { getWagmiConfig } from '@/lib/wagmi';
 import { parseUnits, type Address } from 'viem';
 import { SwapRoute } from '@/types';
 import { simpleSwapService, type SwapParams, type BatchSwapCall } from '@/lib/simple-swap';
@@ -104,6 +104,10 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
 
       // Выполняем batch через sendCalls (EIP-5792)
       console.log('📡 Sending batch calls...');
+      
+      const config = getWagmiConfig();
+      console.log('🔍 Config check:', !!config, 'Chain:', chain?.id, 'Account:', address);
+      
       const result = await sendCalls(config, {
         calls,
         account: address,
@@ -119,6 +123,8 @@ export function useSimpleBatchSwap(): UseSimpleBatchSwapReturn {
       console.log('⏳ Waiting for batch execution...');
       
       try {
+        const config = getWagmiConfig();
+        
         const status = await waitForCallsStatus(config, {
           id: result.id,
           timeout: 300000, // 5 минут timeout
