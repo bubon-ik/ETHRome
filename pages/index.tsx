@@ -222,7 +222,7 @@ export default function Home() {
                       className={`px-4 py-2 rounded-xl font-medium transition-all ${
                         swapMode === 'simple'
                           ? 'liquid-glass-button'
-                          : 'text-white/70 hover:text-white hover:bg-glass-white-5'
+                          : 'text-gray-600 dark:text-white/70 hover:text-gray-800 dark:hover:text-white hover:bg-glass-white-5'
                       }`}
                     >
                       🔄 Simple Swap
@@ -232,7 +232,7 @@ export default function Home() {
                       className={`px-4 py-2 rounded-xl font-medium transition-all ${
                         swapMode === 'fusion'
                           ? 'liquid-glass-button'
-                          : 'text-white/70 hover:text-white hover:bg-glass-white-5'
+                          : 'text-gray-600 dark:text-white/70 hover:text-gray-800 dark:hover:text-white hover:bg-glass-white-5'
                       }`}
                     >
                       ⚡ Fusion (Gasless)
@@ -305,9 +305,9 @@ export default function Home() {
         {/* Footer */}
         <footer className="mt-16 liquid-glass border-t border-white/15">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center text-white/80">
+            <div className="text-center text-gray-700 dark:text-white/80">
               <p className="gradient-text font-medium">Built for ETHRome Hackathon 2025</p>
-              <p className="text-sm mt-2 text-white/60">Powered by Scaffold-ETH, Base, 1inch, and Wagmi</p>
+              <p className="text-sm mt-2 text-gray-600 dark:text-white/60">Powered by Scaffold-ETH, Base, 1inch, and Wagmi</p>
             </div>
           </div>
         </footer>

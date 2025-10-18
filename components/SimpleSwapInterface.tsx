@@ -71,14 +71,14 @@ const SimpleSwapInterface: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
               <div className="flex-1">
-                <h3 className="font-semibold text-yellow-200">Demo Mode Active</h3>
-                <p className="text-sm text-yellow-100/90 mt-1">
+                <h3 className="font-semibold text-yellow-900 dark:text-yellow-200">Demo Mode Active</h3>
+                <p className="text-sm text-yellow-800 dark:text-yellow-100/90 mt-1">
                   Using mock data for demonstration. Get a
                   <a
                     href="https://portal.1inch.dev/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mx-1 underline hover:no-underline font-medium text-yellow-200"
+                    className="mx-1 underline hover:no-underline font-medium text-yellow-900 dark:text-yellow-200"
                   >
                     1inch API key
                   </a>

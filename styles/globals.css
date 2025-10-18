@@ -8,7 +8,7 @@
   }
   
   body {
-    @apply text-white dark:text-white transition-all duration-500;
+    @apply text-gray-900 dark:text-white transition-all duration-500;
     /* Dark mode - liquid glass background */
     background: radial-gradient(ellipse at top, rgba(59, 130, 246, 0.15) 0%, transparent 50%), 
                 radial-gradient(ellipse at bottom, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
