@@ -156,7 +156,7 @@ export class SimpleSwapService {
 
             // Add recipient if different from sender
             if (params.recipient && params.recipient.toLowerCase() !== params.walletAddress.toLowerCase()) {
-                url.searchParams.append('recipient', params.recipient);
+                url.searchParams.append('destReceiver', params.recipient);
                 console.log('👥 Using custom recipient address in batch swap:', params.recipient);
             }
 
@@ -213,7 +213,7 @@ export class SimpleSwapService {
 
             // Add recipient if different from sender
             if (params.recipient && params.recipient.toLowerCase() !== params.walletAddress.toLowerCase()) {
-                url.searchParams.append('recipient', params.recipient);
+                url.searchParams.append('destReceiver', params.recipient);
                 console.log('👥 Using custom recipient address:', params.recipient);
             }
 
