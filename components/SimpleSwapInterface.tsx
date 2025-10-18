@@ -53,13 +53,13 @@ const SimpleSwapInterface: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <div className="card">
+      <div className="liquid-glass-card">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Simple Multi-Token Swap</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Simple Multi-Token Swap</h1>
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-2 text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition-colors liquid-glass rounded-lg"
           >
             <Cog6ToothIcon className="w-6 h-6" />
           </button>
@@ -67,18 +67,18 @@ const SimpleSwapInterface: React.FC = () => {
 
         {/* Service Status Info */}
         {features.demoMode && (
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div className="mb-6 liquid-glass rounded-2xl p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse-glow"></div>
               <div className="flex-1">
-                <h3 className="font-semibold text-yellow-800">Demo Mode Active</h3>
-                <p className="text-sm text-yellow-700 mt-1">
+                <h3 className="font-semibold text-yellow-200">Demo Mode Active</h3>
+                <p className="text-sm text-yellow-100/90 mt-1">
                   Using mock data for demonstration. Get a
                   <a
                     href="https://portal.1inch.dev/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mx-1 underline hover:no-underline font-medium"
+                    className="mx-1 underline hover:no-underline font-medium text-yellow-200"
                   >
                     1inch API key
                   </a>
@@ -96,11 +96,11 @@ const SimpleSwapInterface: React.FC = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-6 p-4 bg-gray-50 rounded-xl"
+              className="mb-6 p-4 liquid-glass rounded-2xl bg-glass-white-5"
             >
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white mb-2">
                     Slippage Tolerance
                   </label>
                   <div className="flex gap-2">
@@ -110,8 +110,8 @@ const SimpleSwapInterface: React.FC = () => {
                         onClick={() => setSlippage(value)}
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           slippage === value
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            ? 'liquid-glass-button'
+                            : 'liquid-glass text-gray-700 dark:text-white/70 hover:text-gray-900 dark:hover:text-white hover:bg-glass-white-5'
                         }`}
                       >
                         {value}%
@@ -121,7 +121,7 @@ const SimpleSwapInterface: React.FC = () => {
                       type="number"
                       value={slippage}
                       onChange={(e) => setSlippage(Number(e.target.value))}
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-20 liquid-glass-input text-sm"
                       step="0.1"
                       min="0.1"
                       max="50"
@@ -129,7 +129,7 @@ const SimpleSwapInterface: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white mb-2">
                     Transaction Deadline
                   </label>
                   <div className="flex items-center gap-2">
@@ -137,11 +137,11 @@ const SimpleSwapInterface: React.FC = () => {
                       type="number"
                       value={deadline}
                       onChange={(e) => setDeadline(Number(e.target.value))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-24 liquid-glass-input text-sm"
                       min="1"
                       max="4320"
                     />
-                    <span className="text-sm text-gray-500">minutes</span>
+                    <span className="text-sm text-gray-600 dark:text-white/60">minutes</span>
                   </div>
                 </div>
               </div>
@@ -168,7 +168,7 @@ const SimpleSwapInterface: React.FC = () => {
         {/* Add Route Button */}
         <button
           onClick={addRoute}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-400 dark:border-white/30 rounded-2xl text-gray-600 dark:text-white/70 hover:border-gray-600 dark:hover:border-white/50 hover:text-gray-800 dark:hover:text-white transition-all duration-300 liquid-glass"
         >
           <PlusIcon className="w-5 h-5" />
           Add Another Swap

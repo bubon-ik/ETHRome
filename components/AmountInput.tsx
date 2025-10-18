@@ -39,13 +39,13 @@ const AmountInput: React.FC<AmountInputProps> = ({
         onChange={handleChange}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full bg-transparent text-right text-base sm:text-lg font-semibold outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white disabled:cursor-not-allowed transition-colors duration-300"
+        className="w-full bg-transparent text-right text-base sm:text-lg font-semibold outline-none placeholder-gray-400 dark:placeholder-white/50 text-gray-900 dark:text-white disabled:cursor-not-allowed transition-colors duration-300"
       />
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={handleMaxClick}
-        className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-md transition-all duration-200"
+        className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold text-blue-600 dark:text-blue-200 hover:text-blue-700 dark:hover:text-blue-100 liquid-glass rounded-md transition-all duration-200 bg-blue-500/20 hover:bg-blue-500/30"
       >
         MAX
       </motion.button>

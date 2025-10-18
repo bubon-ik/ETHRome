@@ -135,12 +135,12 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
   return (
     <div className="space-y-4">
       {/* Service Status */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+      <div className="liquid-glass rounded-2xl p-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
         <div className="flex items-center gap-2">
           <span className="text-lg">🔄</span>
           <div>
-            <div className="text-sm font-semibold text-blue-900">Simple Swap Mode</div>
-            <div className="text-xs text-blue-700">
+            <div className="text-sm font-semibold text-blue-200">Simple Swap Mode</div>
+            <div className="text-xs text-blue-100/90">
               Using 1inch API + wagmi sendCalls for batch swaps
             </div>
           </div>
@@ -149,27 +149,27 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
 
       {/* Swap Summary */}
       {quotes.length > 0 && (
-        <div className="bg-gray-50 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Swap Summary</h3>
+        <div className="liquid-glass rounded-2xl p-4 bg-glass-white-5">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-3">Swap Summary</h3>
           <div className="space-y-2">
             {quotes.map((quote, index) => (
               <div key={index} className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">
+                <span className="text-gray-600 dark:text-white/70">
                   {quote?.fromToken?.symbol || 'Unknown'} → {quote?.toToken?.symbol || 'Unknown'}
                 </span>
-                <span className="font-medium">
+                <span className="font-medium text-gray-900 dark:text-white">
                   {formatAmount(quote?.toAmount || '0', quote?.toToken?.decimals || 18)} {quote?.toToken?.symbol || 'Unknown'}
                 </span>
               </div>
             ))}
-            <div className="pt-2 border-t border-gray-200">
+            <div className="pt-2 border-t border-gray-300 dark:border-white/20">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Total Gas (est.)</span>
-                <span className="font-medium">{totalGas} GWEI</span>
+                <span className="text-gray-600 dark:text-white/70">Total Gas (est.)</span>
+                <span className="font-medium text-gray-900 dark:text-white">{totalGas} GWEI</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Batch Calls</span>
-                <span className="font-medium">{callsCount || quotes.length * 2}</span>
+                <span className="text-gray-600 dark:text-white/70">Batch Calls</span>
+                <span className="font-medium text-gray-900 dark:text-white">{callsCount || quotes.length * 2}</span>
               </div>
             </div>
           </div>
@@ -178,31 +178,31 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-red-700 text-sm">{error}</p>
+        <div className="liquid-glass rounded-2xl p-4 bg-red-500/20 border border-red-400/30">
+          <p className="text-red-200 text-sm">{error}</p>
         </div>
       )}
 
       {/* Success Display */}
       {isSuccess && txHash && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-          <p className="text-green-700 text-sm font-semibold mb-1">
+        <div className="liquid-glass rounded-2xl p-4 bg-green-500/20 border border-green-400/30">
+          <p className="text-green-200 text-sm font-semibold mb-1">
             ✅ Batch Swap Successful!
           </p>
-          <p className="text-green-600 text-xs">
+          <p className="text-green-100 text-xs">
             Transaction confirmed! 
             <a
               href={`https://basescan.org/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-1 underline hover:no-underline"
+              className="ml-1 underline hover:no-underline text-green-200"
             >
               View on BaseScan
             </a>
           </p>
           {batchId && (
-            <p className="text-green-600 text-xs mt-1">
-              Batch ID: <span className="font-mono">{batchId}</span>
+            <p className="text-green-100 text-xs mt-1">
+              Batch ID: <span className="font-mono text-green-200">{batchId}</span>
             </p>
           )}
         </div>
@@ -212,10 +212,10 @@ const SimpleBatchSwapButton: React.FC<SimpleBatchSwapButtonProps> = ({
       <button
         onClick={handleSwap}
         disabled={isDisabled}
-        className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
+        className={`w-full py-4 px-6 font-semibold text-lg transition-all duration-300 ${
           isDisabled
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'btn-primary hover:shadow-xl'
+            ? 'liquid-glass bg-glass-white-5 text-gray-500 dark:text-white/50 cursor-not-allowed rounded-2xl'
+            : 'liquid-glass-button hover:shadow-glass-lg'
         }`}
       >
         {isLoading && (

@@ -38,7 +38,7 @@ const DarkModeToggle: React.FC = () => {
   if (!mounted) {
     // Return a placeholder that matches the button size to prevent layout shift
     return (
-      <div className="w-12 h-12 rounded-xl bg-gray-100 animate-pulse" />
+      <div className="w-12 h-12 rounded-xl liquid-glass animate-pulse" />
     );
   }
 
@@ -47,16 +47,7 @@ const DarkModeToggle: React.FC = () => {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={toggleDarkMode}
-      className={`
-        relative inline-flex items-center justify-center
-        w-12 h-12 rounded-xl transition-all duration-300
-        backdrop-blur-sm border shadow-lg
-        ${isDarkMode 
-          ? 'bg-black/20 text-yellow-400 hover:bg-black/30 border-white/20' 
-          : 'bg-white/20 text-gray-600 hover:bg-white/30 border-white/30'
-        }
-        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-transparent
-      `}
+      className="relative inline-flex items-center justify-center w-12 h-12 liquid-glass rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400/50 text-gray-600 dark:text-white/80 hover:text-gray-800 dark:hover:text-white"
       aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       <motion.div
@@ -75,14 +66,14 @@ const DarkModeToggle: React.FC = () => {
         )}
       </motion.div>
       
-      {/* Glow effect for dark mode */}
-      {isDarkMode && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute inset-0 rounded-xl bg-yellow-400/20 blur-sm -z-10"
-        />
-      )}
+      {/* Glow effect */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isDarkMode ? 0.8 : 0.5 }}
+        className={`absolute inset-0 rounded-xl blur-sm -z-10 ${
+          isDarkMode ? 'bg-yellow-400/20' : 'bg-blue-400/20'
+        }`}
+      />
     </motion.button>
   );
 };

@@ -7,8 +7,7 @@ import {
   ClockIcon, 
   ChartBarIcon,
   Bars3Icon,
-  XMarkIcon,
-  MagnifyingGlassIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import SwapInterface from '@/components/SwapInterface';
 import SimpleSwapInterface from '@/components/SimpleSwapInterface';
@@ -34,10 +33,6 @@ export default function Home() {
     { id: 'analytics', label: 'Analytics', icon: ChartBarIcon },
   ] as const;
 
-  const handleTokenSearchClick = () => {
-    window.open('/token-search-demo', '_blank');
-  };
-
   return (
     <>
       <Head>
@@ -47,66 +42,62 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 relative overflow-hidden">
-        {/* Animated Background Elements */}
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Liquid Orb Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 sm:-top-40 sm:-right-40 w-40 h-40 sm:w-80 sm:h-80 bg-gradient-to-br from-blue-400/30 to-purple-600/30 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-20 -left-20 sm:-bottom-40 sm:-left-40 w-40 h-40 sm:w-80 sm:h-80 bg-gradient-to-br from-pink-400/30 to-blue-600/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse delay-500"></div>
+          <div className="liquid-orb"></div>
+          <div className="liquid-orb"></div>
+          <div className="liquid-orb"></div>
+          
+          {/* Additional floating elements */}
+          <div className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-gradient-to-br from-blue-500/10 to-transparent blur-2xl floating-element"></div>
+          <div className="absolute bottom-1/4 left-1/4 w-24 h-24 rounded-full bg-gradient-to-br from-purple-500/10 to-transparent blur-2xl floating-element"></div>
+          <div className="absolute top-3/4 right-1/3 w-40 h-40 rounded-full bg-gradient-to-br from-pink-500/10 to-transparent blur-2xl floating-element"></div>
         </div>
 
         {/* Navigation */}
-        <nav className="relative z-40 bg-white/10 dark:bg-black/10 backdrop-blur-xl border-b border-white/20 dark:border-white/10 sticky top-0">
+        <nav className="relative z-40 liquid-glass border-b border-white/15 sticky top-0">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-14 sm:h-16">
               {/* Logo */}
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center space-x-2 sm:space-x-3"
+                className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
-                  <ArrowsRightLeftIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 liquid-glass rounded-lg sm:rounded-xl flex items-center justify-center shadow-glass relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/80 to-purple-600/80"></div>
+                  <ArrowsRightLeftIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white relative z-10" />
                 </div>
-                <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-lg sm:text-xl font-bold gradient-text">
                   <span className="hidden sm:inline">Multi-Token Swap</span>
                   <span className="sm:hidden">MTS</span>
                 </h1>
               </motion.div>
 
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center space-x-1">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <motion.button
-                      key={tab.id}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`px-3 lg:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 text-sm ${
-                        activeTab === tab.id
-                          ? 'bg-white/20 dark:bg-white/10 text-blue-600 dark:text-blue-400 shadow-lg backdrop-blur-sm'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="hidden lg:inline">{tab.label}</span>
-                    </motion.button>
-                  );
-                })}
-                
-                {/* Token Search Demo Button */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleTokenSearchClick}
-                  className="px-3 lg:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5"
-                  title="Token Search Demo"
-                >
-                  <MagnifyingGlassIcon className="w-4 h-4" />
-                  <span className="hidden lg:inline">Token Search</span>
-                </motion.button>
+              {/* Centered Navigation Tabs */}
+              <div className="hidden md:flex items-center justify-center flex-1 max-w-md mx-8">
+                <div className="flex items-center nav-tabs-container rounded-2xl p-1">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <motion.button
+                        key={tab.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`nav-tab-button flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-300 flex-1 min-w-0 ${
+                          activeTab === tab.id
+                            ? 'liquid-glass-button text-white shadow-glass'
+                            : 'text-gray-600 dark:text-white/70 hover:text-gray-800 dark:hover:text-white hover:bg-glass-white-5'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="hidden lg:inline text-sm truncate">{tab.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Connect Button and Dark Mode Toggle */}
@@ -115,7 +106,7 @@ export default function Home() {
                 {!mounted ? (
                   // Placeholder to keep SSR/CSR markup identical on first paint
                   <button
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 sm:px-4 py-2 rounded-xl font-medium opacity-70 cursor-wait backdrop-blur-sm text-xs sm:text-sm"
+                    className="liquid-glass-button opacity-70 cursor-wait text-xs sm:text-sm"
                     disabled
                   >
                     <span className="hidden sm:inline">Connect Wallet</span>
@@ -123,7 +114,7 @@ export default function Home() {
                   </button>
                 ) : isConnected ? (
                   <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
-                    <div className="bg-white/20 dark:bg-black/20 backdrop-blur-sm px-2 sm:px-3 py-2 rounded-xl border border-white/30 dark:border-white/20">
+                    <div className="liquid-glass rounded-xl px-2 sm:px-3 py-2 bg-glass-white-10">
                       <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                         <span className="hidden sm:inline">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                         <span className="sm:hidden">{address?.slice(0, 4)}...{address?.slice(-2)}</span>
@@ -131,7 +122,7 @@ export default function Home() {
                     </div>
                     <button
                       onClick={() => disconnect()}
-                      className="bg-red-500/20 backdrop-blur-sm text-red-700 dark:text-red-300 px-2 sm:px-3 py-2 rounded-xl text-xs sm:text-sm font-medium hover:bg-red-500/30 transition-all duration-300 border border-red-500/30"
+                      className="liquid-glass rounded-xl px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-red-300 hover:text-red-200 transition-all duration-300 bg-red-500/20 border-red-500/30"
                     >
                       <span className="hidden sm:inline">Disconnect</span>
                       <span className="sm:hidden">×</span>
@@ -140,7 +131,7 @@ export default function Home() {
                 ) : (
                   <button
                     onClick={() => connect({ connector: connectors[0] })}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 sm:px-4 py-2 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg backdrop-blur-sm text-xs sm:text-sm"
+                    className="liquid-glass-button text-xs sm:text-sm"
                   >
                     <span className="hidden sm:inline">Connect Wallet</span>
                     <span className="sm:hidden">Connect</span>
@@ -150,7 +141,7 @@ export default function Home() {
                 {/* Mobile Menu Button */}
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="md:hidden p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-300 bg-white/20 dark:bg-black/20 backdrop-blur-sm rounded-lg sm:rounded-xl"
+                  className="md:hidden p-1.5 sm:p-2 text-gray-600 dark:text-white/80 hover:text-gray-800 dark:hover:text-white transition-colors duration-300 liquid-glass rounded-lg sm:rounded-xl"
                 >
                   {isMobileMenuOpen ? (
                     <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -167,9 +158,9 @@ export default function Home() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="md:hidden py-3 sm:py-4 border-t border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/10 backdrop-blur-xl"
+                className="md:hidden py-3 sm:py-4 border-t border-white/15 liquid-glass"
               >
-                <div className="flex flex-col gap-1 sm:gap-2">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   {tabs.map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -179,29 +170,17 @@ export default function Home() {
                           setActiveTab(tab.id);
                           setIsMobileMenuOpen(false);
                         }}
-                        className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-left text-sm sm:text-base ${
+                        className={`nav-tab-button flex flex-col items-center gap-1 sm:gap-2 px-2 sm:px-3 py-3 sm:py-4 rounded-xl font-medium transition-all text-center text-xs sm:text-sm ${
                           activeTab === tab.id
-                            ? 'bg-white/20 dark:bg-white/10 text-blue-600 dark:text-blue-400 backdrop-blur-sm shadow-lg'
-                            : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/5'
+                            ? 'liquid-glass-button text-white shadow-glass'
+                            : 'text-gray-700 dark:text-white/80 hover:text-gray-900 dark:hover:text-white nav-tabs-container'
                         }`}
                       >
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                        {tab.label}
+                        <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <span className="leading-tight">{tab.label}</span>
                       </button>
                     );
                   })}
-                  
-                  {/* Token Search Demo Button */}
-                  <button
-                    onClick={() => {
-                      handleTokenSearchClick();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-left text-sm sm:text-base text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/5"
-                  >
-                    <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Token Search Demo
-                  </button>
                 </div>
               </motion.div>
             )}
@@ -219,11 +198,11 @@ export default function Home() {
           >
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 leading-tight">
               <span className="block mb-1 sm:mb-2">Swap Multiple Tokens</span>
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+              <span className="block gradient-text">
                 In One Transaction
               </span>
             </h2>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 dark:text-gray-300 max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto px-2 sm:px-0 leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 dark:text-white/80 max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto px-2 sm:px-0 leading-relaxed">
               Experience the future of DeFi with batch swaps and limit orders on Base mainnet. 
               Save on gas fees and time with our innovative multi-token swap protocol.
             </p>
@@ -240,23 +219,23 @@ export default function Home() {
               <div className="space-y-6">
                 {/* Swap Mode Selector */}
                 <div className="flex justify-center">
-                  <div className="bg-gray-100 rounded-xl p-1 flex">
+                  <div className="liquid-glass rounded-2xl p-1 flex">
                     <button
                       onClick={() => setSwapMode('simple')}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      className={`px-4 py-2 rounded-xl font-medium transition-all ${
                         swapMode === 'simple'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'liquid-glass-button'
+                          : 'text-white/70 hover:text-white hover:bg-glass-white-5'
                       }`}
                     >
                       🔄 Simple Swap
                     </button>
                     <button
                       onClick={() => setSwapMode('fusion')}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      className={`px-4 py-2 rounded-xl font-medium transition-all ${
                         swapMode === 'fusion'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'liquid-glass-button'
+                          : 'text-white/70 hover:text-white hover:bg-glass-white-5'
                       }`}
                     >
                       ⚡ Fusion (Gasless)
@@ -270,10 +249,10 @@ export default function Home() {
             )}
             {activeTab === 'orders' && <LimitOrdersPanel />}
             {activeTab === 'analytics' && (
-              <div className="card dark:bg-gray-800 dark:border-gray-700 text-center py-12 transition-colors duration-300">
-                <ChartBarIcon className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4 transition-colors duration-300" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-300">Analytics Coming Soon</h3>
-                <p className="text-gray-500 dark:text-gray-400 transition-colors duration-300">Track your trading performance and portfolio analytics</p>
+              <div className="liquid-glass-card text-center py-12">
+                <ChartBarIcon className="w-16 h-16 text-gray-500 dark:text-white/60 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Analytics Coming Soon</h3>
+                <p className="text-gray-700 dark:text-white/70">Track your trading performance and portfolio analytics</p>
               </div>
             )}
           </motion.div>
@@ -285,44 +264,59 @@ export default function Home() {
             transition={{ delay: 0.3 }}
             className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
           >
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
-                <ArrowsRightLeftIcon className="w-8 h-8 text-primary-600 dark:text-primary-400 transition-colors duration-300" />
+            <motion.div 
+              className="liquid-glass-card text-center floating-element"
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="w-16 h-16 liquid-glass rounded-2xl flex items-center justify-center mx-auto mb-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/60 to-blue-600/60"></div>
+                <ArrowsRightLeftIcon className="w-8 h-8 text-white relative z-10" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-300">Batch Swaps</h3>
-              <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Batch Swaps</h3>
+              <p className="text-gray-700 dark:text-white/70">
                 Execute multiple token swaps in a single transaction using EIP-5792 sendCalls
               </p>
-            </div>
+            </motion.div>
 
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
-                <ClockIcon className="w-8 h-8 text-purple-600 dark:text-purple-400 transition-colors duration-300" />
+            <motion.div 
+              className="liquid-glass-card text-center floating-element"
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="w-16 h-16 liquid-glass rounded-2xl flex items-center justify-center mx-auto mb-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/60 to-purple-600/60"></div>
+                <ClockIcon className="w-8 h-8 text-white relative z-10" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-300">Limit Orders</h3>
-              <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Limit Orders</h3>
+              <p className="text-gray-700 dark:text-white/70">
                 Set price targets and execute trades automatically with 1inch limit orders
               </p>
-            </div>
+            </motion.div>
 
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
-                <ChartBarIcon className="w-8 h-8 text-green-600 dark:text-green-400 transition-colors duration-300" />
+            <motion.div 
+              className="liquid-glass-card text-center floating-element"
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="w-16 h-16 liquid-glass rounded-2xl flex items-center justify-center mx-auto mb-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/60 to-green-600/60"></div>
+                <ChartBarIcon className="w-8 h-8 text-white relative z-10" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-300">Base Optimized</h3>
-              <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Base Optimized</h3>
+              <p className="text-gray-700 dark:text-white/70">
                 Built specifically for Base mainnet with low fees and fast transactions
               </p>
-            </div>
+            </motion.div>
           </motion.div>
         </main>
 
         {/* Footer */}
-        <footer className="mt-16 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
+        <footer className="mt-16 liquid-glass border-t border-white/15">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center text-gray-600 dark:text-gray-300 transition-colors duration-300">
-              <p>Built for ETHRome Hackathon 2025</p>
-              <p className="text-sm mt-2">Powered by Scaffold-ETH, Base, 1inch, and Wagmi</p>
+            <div className="text-center text-white/80">
+              <p className="gradient-text font-medium">Built for ETHRome Hackathon 2025</p>
+              <p className="text-sm mt-2 text-white/60">Powered by Scaffold-ETH, Base, 1inch, and Wagmi</p>
             </div>
           </div>
         </footer>
