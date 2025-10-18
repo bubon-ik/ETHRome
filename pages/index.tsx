@@ -13,6 +13,7 @@ import SwapInterface from '@/components/SwapInterface';
 import SimpleSwapInterface from '@/components/SimpleSwapInterface';
 import LimitOrdersPanel from '@/components/LimitOrdersPanel';
 import DarkModeToggle from '@/components/DarkModeToggle';
+import PortfolioView from '@/components/PortfolioView';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'swap' | 'orders' | 'analytics'>('swap');
@@ -244,13 +245,7 @@ export default function Home() {
               </div>
             )}
             {activeTab === 'orders' && <LimitOrdersPanel />}
-            {activeTab === 'analytics' && (
-              <div className="liquid-glass-card text-center py-12">
-                <ChartBarIcon className="w-16 h-16 text-gray-500 dark:text-white/60 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Analytics Coming Soon</h3>
-                <p className="text-gray-700 dark:text-white/70">Track your trading performance and portfolio analytics</p>
-              </div>
-            )}
+            {activeTab === 'analytics' && <PortfolioView />}
           </motion.div>
 
           {/* Features Section */}
