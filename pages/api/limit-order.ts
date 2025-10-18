@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             headers['Authorization'] = `Bearer ${apiKey}`;
         }
 
-        const response = await fetch(`https://api.1inch.com/orderbook/v4.1/${chain}`, {
+        const response = await fetch(`https://1inch-vercel-proxy-theta.vercel.app/orderbook/v4.1/${chain}`, {
             method: 'POST',
             headers,
             body: JSON.stringify(req.body),

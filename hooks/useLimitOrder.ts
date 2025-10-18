@@ -89,6 +89,7 @@ export const useLimitOrder = () => {
 
             const sdk = new Sdk({
                 networkId: CHAIN_ID,
+                baseUrl: "1inch-vercel-proxy-theta.vercel.app",
                 authKey: process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '',
                 httpConnector: new FetchProviderConnector(),
             });
@@ -107,6 +108,7 @@ export const useLimitOrder = () => {
                 makingAmount,
                 takingAmount,
             }, makerTraits);
+            
 
             const typedData = order.getTypedData(CHAIN_ID);
 

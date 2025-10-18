@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const ONEINCH_BASE = 'https://api.1inch.dev';
-const LIMIT_ORDERS_BASE = 'https://limit-orders-api.1inch.io';
+const ONEINCH_BASE = 'https://1inch-vercel-proxy-theta.vercel.app'; // REPLACED ON vercel
+// const LIMIT_ORDERS_BASE = 'https://limit-orders-api.1inch.io';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { path = [] } = req.query as { path: string[] };
