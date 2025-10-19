@@ -38,12 +38,12 @@ const LimitOrdersPanel: React.FC = () => {
         }
     ]);
     const [currentOrderIndex, setCurrentOrderIndex] = useState(0);
+    const [justSubmitted, setJustSubmitted] = useState(false);
     const { createLimitOrder, loading, error, transactions, currentTx } = useLimitOrder();
 
     // Auto-reset on success
     useEffect(() => {
-        if (!error && !loading && orders.length > 0 && transactions === 0) {
-            // Assume success if no error and not loading
+        if (justSubmitted && !error && !loading && transactions === 0) {
             const timer = setTimeout(() => {
                 setOrders([{
                     tokenIn: BASE_TOKENS[0].address,
@@ -56,10 +56,11 @@ const LimitOrdersPanel: React.FC = () => {
                     partialFillEnabled: true
                 }]);
                 setCurrentOrderIndex(0);
+                setJustSubmitted(false);
             }, 3000);
             return () => clearTimeout(timer);
         }
-    }, [error, loading, transactions, orders.length]);
+    }, [justSubmitted, error, loading, transactions]);
 
     // Auto-clear errors
     useEffect(() => {
@@ -69,6 +70,7 @@ const LimitOrdersPanel: React.FC = () => {
 
             const timer = setTimeout(() => {
                 // Reset error by triggering state update
+                setJustSubmitted(false);
             }, clearTime);
             return () => clearTimeout(timer);
         }
@@ -143,9 +145,38 @@ const LimitOrdersPanel: React.FC = () => {
         ));
     }, []);
 
+    // Input validation for number inputs
+    const handleNumberKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Allow: backspace, delete, tab, escape, enter, decimal point, and numbers
+        if (
+            [46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
+            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+            (e.ctrlKey === true && [65, 67, 86, 88, 90].indexOf(e.keyCode) !== -1) ||
+            // Allow: home, end, left, right
+            (e.keyCode >= 35 && e.keyCode <= 39) ||
+            // Allow numbers 0-9
+            (e.keyCode >= 48 && e.keyCode <= 57) ||
+            // Allow numpad numbers
+            (e.keyCode >= 96 && e.keyCode <= 105)
+        ) {
+            return;
+        }
+        // Prevent input
+        e.preventDefault();
+    };
+
     const calculateEstimatedReceive = (order: OrderItem) => {
-        if (!order.amountIn || !order.targetPrice) return '0.00';
-        return (parseFloat(order.amountIn) * parseFloat(order.targetPrice)).toFixed(4);
+        try {
+            if (!order.amountIn || !order.targetPrice) return '0.00';
+            const amountIn = parseFloat(order.amountIn);
+            const targetPrice = parseFloat(order.targetPrice);
+            if (isNaN(amountIn) || isNaN(targetPrice) || amountIn <= 0 || targetPrice <= 0) {
+                return '0.00';
+            }
+            return (amountIn * targetPrice).toFixed(4);
+        } catch (_error) {
+            return 'Error';
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -172,14 +203,11 @@ const LimitOrdersPanel: React.FC = () => {
 
         await createLimitOrder(ordersForSubmission);
 
-        // Clear orders after successful submission
-        if (!error) {
-            setOrders([]);
-            setCurrentOrderIndex(0);
-        }
+        // Mark as submitted for auto-reset
+        setJustSubmitted(true);
     };
 
-    const currentOrder = orders[currentOrderIndex];
+    const currentOrder = orders.length > 0 ? orders[currentOrderIndex] : null;
     const validOrdersCount = orders.filter(order =>
         order.amountIn &&
         order.targetPrice &&
@@ -221,8 +249,8 @@ const LimitOrdersPanel: React.FC = () => {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     className={`liquid-glass rounded-xl p-3 cursor-pointer transition-all duration-200 ${index === currentOrderIndex
-                                            ? 'ring-2 ring-blue-400 bg-blue-500/10'
-                                            : 'hover:bg-white/10'
+                                        ? 'ring-2 ring-blue-400 bg-blue-500/10'
+                                        : 'hover:bg-white/10'
                                         }`}
                                     onClick={() => setCurrentOrderIndex(index)}
                                 >
@@ -255,9 +283,9 @@ const LimitOrdersPanel: React.FC = () => {
                                         </div>
                                         <div className="text-right">
                                             <div className={`w-2 h-2 rounded-full ${order.amountIn && order.targetPrice &&
-                                                    parseFloat(order.amountIn) > 0 && parseFloat(order.targetPrice) > 0
-                                                    ? 'bg-green-400'
-                                                    : 'bg-gray-400'
+                                                parseFloat(order.amountIn) > 0 && parseFloat(order.targetPrice) > 0
+                                                ? 'bg-green-400'
+                                                : 'bg-gray-400'
                                                 }`} />
                                         </div>
                                     </div>
@@ -269,7 +297,7 @@ const LimitOrdersPanel: React.FC = () => {
 
                 {/* Main Order Editor */}
                 <div className="lg:col-span-2">
-                    {orders.length > 0 ? (
+                    {orders.length > 0 && currentOrder ? (
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentOrderIndex}
@@ -345,10 +373,18 @@ const LimitOrdersPanel: React.FC = () => {
                                                 step="0.0001"
                                                 placeholder="0.0"
                                                 value={currentOrder.amountIn}
-                                                onChange={(e) => updateLimitOrder(currentOrderIndex, {
-                                                    amountIn: e.target.value
-                                                })}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    // Prevent negative values
+                                                    if (value === '' || parseFloat(value) >= 0) {
+                                                        updateLimitOrder(currentOrderIndex, {
+                                                            amountIn: value
+                                                        });
+                                                    }
+                                                }}
+                                                onKeyDown={handleNumberKeyDown}
                                                 className="bg-transparent text-right text-2xl font-bold border-0 focus:ring-0 w-full max-w-[150px]"
+                                                min="0"
                                             />
                                         </div>
                                     </div>
@@ -417,8 +453,16 @@ const LimitOrdersPanel: React.FC = () => {
                                                 step="0.000001"
                                                 placeholder="0.000000"
                                                 value={currentOrder.targetPrice}
-                                                onChange={(e) => updateLimitOrder(currentOrderIndex, { targetPrice: e.target.value })}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    // Prevent negative values
+                                                    if (value === '' || parseFloat(value) >= 0) {
+                                                        updateLimitOrder(currentOrderIndex, { targetPrice: value });
+                                                    }
+                                                }}
+                                                onKeyDown={handleNumberKeyDown}
                                                 className="bg-transparent text-lg font-bold border-0 focus:ring-0 flex-1"
+                                                min="0"
                                             />
                                             <span className="text-sm text-gray-600 dark:text-white/60">
                                                 {BASE_TOKENS.find(t => t.address === currentOrder.tokenOut)?.symbol}/{BASE_TOKENS.find(t => t.address === currentOrder.tokenIn)?.symbol}
