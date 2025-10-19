@@ -94,7 +94,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
 
   const performSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     setIsSearching(true);
     try {
       console.log('Searching for:', searchQuery);
@@ -104,9 +104,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
         limit: 20,
         ignoreListed: false
       });
-      
+
       console.log('Search results:', results);
-      
+
       const convertedTokens: Token[] = results.map(token => ({
         address: token.address,
         symbol: token.symbol,
@@ -115,7 +115,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
         chainId: 8453,
         logoURI: token.logoURI
       }));
-      
+
       console.log('Converted tokens:', convertedTokens);
       setSearchResults(convertedTokens);
     } catch (error) {
