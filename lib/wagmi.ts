@@ -1,4 +1,4 @@
-import { createConfig, http } from 'wagmi';
+import { createConfig, http, fallback } from 'wagmi';
 import { base, mainnet, sepolia } from 'wagmi/chains';
 import { injected, walletConnect } from 'wagmi/connectors';
 import type { Address } from 'viem';
@@ -19,9 +19,33 @@ export const getWagmiConfig = () => {
                 }),
             ],
             transports: {
-                [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://mainnet.base.org'),
-                [mainnet.id]: http(process.env.NEXT_PUBLIC_MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com'),
-                [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://eth-sepolia.public.blastapi.io'),
+                [base.id]: fallback([
+                    http(process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://mainnet.base.org'),
+                    http('https://base-mainnet.public.blastapi.io'),
+                    http('https://base.blockpi.network/v1/rpc/public'),
+                    http('https://base.meowrpc.com'),
+                ], {
+                    rank: false,
+                    retryCount: 3,
+                    retryDelay: 1000,
+                }),
+                [mainnet.id]: fallback([
+                    http(process.env.NEXT_PUBLIC_MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com'),
+                    http('https://eth-mainnet.public.blastapi.io'),
+                    http('https://ethereum.blockpi.network/v1/rpc/public'),
+                ], {
+                    rank: false,
+                    retryCount: 3,
+                    retryDelay: 1000,
+                }),
+                [sepolia.id]: fallback([
+                    http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://eth-sepolia.public.blastapi.io'),
+                    http('https://sepolia.blockpi.network/v1/rpc/public'),
+                ], {
+                    rank: false,
+                    retryCount: 3,
+                    retryDelay: 1000,
+                }),
             },
         });
     }

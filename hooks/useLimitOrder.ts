@@ -5,6 +5,7 @@ import { readContract, signTypedData, waitForTransactionReceipt, writeContract }
 import { getWagmiConfig } from '@/lib/wagmi';
 import { base } from 'wagmi/chains';
 import { MakerTraits, Address, Sdk, randBigInt, FetchProviderConnector } from '@1inch/limit-order-sdk';
+import { withRetry, globalCircuitBreaker, globalRateLimiter } from '@/lib/retry-utils';
 
 const CHAIN_ID = 8453;
 const LIMIT_ORDER_CONTRACT: `0x${string}` = '0x111111125421cA6dc452d289314280a0f8842A65';
@@ -24,26 +25,54 @@ export const useLimitOrder = () => {
         const owner = address as `0x${string}`;
 
         try {
-            const currentAllowance = (await readContract(getWagmiConfig(), {
-                address: formattedToken,
-                abi: erc20Abi,
-                functionName: 'allowance',
-                args: [owner, LIMIT_ORDER_CONTRACT],
-            })) as bigint;
+            // Apply rate limiting before making requests
+            await globalRateLimiter.waitIfNeeded();
+            
+            // Use circuit breaker and retry logic for allowance check
+            const currentAllowance = await globalCircuitBreaker.execute(async () => {
+                return await withRetry(async () => {
+                    return (await readContract(getWagmiConfig(), {
+                        address: formattedToken,
+                        abi: erc20Abi,
+                        functionName: 'allowance',
+                        args: [owner, LIMIT_ORDER_CONTRACT],
+                    })) as bigint;
+                }, {
+                    maxRetries: 3,
+                    baseDelay: 1000,
+                });
+            });
 
             if (currentAllowance >= requiredAmount) {
                 return;
             }
 
             setCurrentTx(prev => prev + 1);
-            const hash = await writeContract(getWagmiConfig(), {
-                address: formattedToken,
-                abi: erc20Abi,
-                functionName: 'approve',
-                args: [LIMIT_ORDER_CONTRACT, requiredAmount],
+            
+            // Use circuit breaker and retry logic for approval transaction
+            const hash = await globalCircuitBreaker.execute(async () => {
+                return await withRetry(async () => {
+                    return await writeContract(getWagmiConfig(), {
+                        address: formattedToken,
+                        abi: erc20Abi,
+                        functionName: 'approve',
+                        args: [LIMIT_ORDER_CONTRACT, requiredAmount],
+                    });
+                }, {
+                    maxRetries: 3,
+                    baseDelay: 1000,
+                });
             });
 
-            await waitForTransactionReceipt(getWagmiConfig(), { hash });
+            // Use circuit breaker and retry logic for transaction receipt
+            await globalCircuitBreaker.execute(async () => {
+                return await withRetry(async () => {
+                    return await waitForTransactionReceipt(getWagmiConfig(), { hash });
+                }, {
+                    maxRetries: 5,
+                    baseDelay: 2000,
+                });
+            });
         } catch (error) {
             if (error instanceof Error &&
                 (error.message.includes('User denied') ||
@@ -86,8 +115,28 @@ export const useLimitOrder = () => {
             setError(null);
             setCurrentTx(0);
 
+            // First handle all approvals
             setTransactions(orders.length * 2); // Each order needs approval + signature
+            
+            // Create a single SDK instance to be reused
+            const sdk = new Sdk({
+                networkId: CHAIN_ID,
+                baseUrl: "https://1inch-vercel-proxy-theta.vercel.app/orderbook/v4.1",
+                authKey: process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '',
+                httpConnector: new FetchProviderConnector(),
+            });
 
+            // First handle all approvals
+            for (let i = 0; i < orders.length; i++) {
+                const { tokenIn, amountIn, decimalsIn } = orders[i];
+                const makerAsset = tokenIn;
+                const makingAmount = parseUnits(amountIn, decimalsIn);
+                
+                // Handle approvals first
+                await ensureAllowance(makerAsset, makingAmount);
+            }
+
+            // Then create and submit orders with delay between submissions
             for (let i = 0; i < orders.length; i++) {
                 const { tokenIn, tokenOut, amountIn, amountOut, decimalsIn, decimalsOut } = orders[i];
 
@@ -97,15 +146,10 @@ export const useLimitOrder = () => {
                 const makingAmount = parseUnits(amountIn, decimalsIn);
                 const takingAmount = parseUnits(amountOut, decimalsOut || 18);
 
-                // For approval transaction
-                await ensureAllowance(makerAsset, makingAmount);
-
-                const sdk = new Sdk({
-                    networkId: CHAIN_ID,
-                    baseUrl: "https://1inch-vercel-proxy-theta.vercel.app/orderbook/v4.1",
-                    authKey: process.env.NEXT_PUBLIC_ONEINCH_API_KEY || '',
-                    httpConnector: new FetchProviderConnector(),
-                });
+                // Add a small delay between operations to avoid overwhelming the system
+                if (i > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
 
                 const makerTraits = MakerTraits.default()
                     .withAnySender()
@@ -114,27 +158,57 @@ export const useLimitOrder = () => {
                     .withExpiration(BigInt(Math.floor(Date.now() / 1000) + 3600))
                     .withNonce(randBigInt((BigInt(1) << BigInt(40)) - BigInt(1)));
 
-                const order = await sdk.createOrder({
-                    maker: new Address(address),
-                    makerAsset: new Address(makerAsset),
-                    takerAsset: new Address(takerAsset),
-                    makingAmount,
-                    takingAmount,
-                }, makerTraits);
+                try {
+                    const order = await sdk.createOrder({
+                        maker: new Address(address),
+                        makerAsset: new Address(makerAsset),
+                        takerAsset: new Address(takerAsset),
+                        makingAmount,
+                        takingAmount,
+                    }, makerTraits);
 
-                const typedData = order.getTypedData(CHAIN_ID);
+                    const typedData = order.getTypedData(CHAIN_ID);
 
-                // For signature transaction
-                setCurrentTx(prev => prev + 1);
-                const signature = await signTypedData(getWagmiConfig(), {
-                    account: address,
-                    types: typedData.types,
-                    primaryType: typedData.primaryType,
-                    domain: typedData.domain,
-                    message: typedData.message,
-                });
+                    // For signature transaction
+                    setCurrentTx(prev => prev + 1);
+                    
+                    // Apply rate limiting before signature
+                    await globalRateLimiter.waitIfNeeded();
+                    
+                    const signature = await globalCircuitBreaker.execute(async () => {
+                        return await withRetry(async () => {
+                            return await signTypedData(getWagmiConfig(), {
+                                account: address,
+                                types: typedData.types,
+                                primaryType: typedData.primaryType,
+                                domain: typedData.domain,
+                                message: typedData.message,
+                            });
+                        }, {
+                            maxRetries: 2,
+                            baseDelay: 500,
+                        });
+                    });
 
-                await sdk.submitOrder(order, signature);
+                    // Add a small delay before submitting to avoid overwhelming the system
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
+                    // Apply rate limiting and circuit breaker for order submission
+                    await globalRateLimiter.waitIfNeeded();
+                    await globalCircuitBreaker.execute(async () => {
+                        return await withRetry(async () => {
+                            return await sdk.submitOrder(order, signature);
+                        }, {
+                            maxRetries: 3,
+                            baseDelay: 1000,
+                        });
+                    });
+                } catch (e) {
+                    const orderError = e as Error;
+                    console.error(`Error processing order ${i+1}:`, orderError);
+                    // Continue with next order instead of failing completely
+                    setError(`Error with order ${i+1}: ${orderError.message}`);
+                }
             }
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Unknown error';
@@ -145,14 +219,26 @@ export const useLimitOrder = () => {
                 message.toLowerCase().includes('user denied transaction signature')) {
                 setError('Transaction was cancelled by user');
                 return;
+            } else if (message.includes('429') ||
+                      message.includes('rate limit') ||
+                      message.includes('over rate limit') ||
+                      message.includes('Circuit breaker is OPEN')) {
+                setError('Network is temporarily overloaded. Please try again in a few moments.');
+                return;
+            } else if (message.includes('Failed after') && message.includes('attempts')) {
+                setError('Network request failed after multiple attempts. Please check your connection and try again.');
+                return;
             } else {
                 setError(message);
-                throw err;
+                // Don't throw the error here to avoid crashing the UI
+                console.error('Error creating limit orders:', err);
             }
         } finally {
             setLoading(false);
             setCurrentTx(0);
             setTransactions(0);
+            
+            // No explicit cleanup needed for the SDK
         }
     };
 
