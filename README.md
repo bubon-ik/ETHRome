@@ -1,290 +1,115 @@
-# MultiSwap - KittensSwap Protocol
+# Base Batch Swap & Limit Orders (1inch + wagmi)
 
-🏆 **ETHRome Hackathon Project** 🏆
+A minimal dApp for:
+- Batch swapping multiple tokens in a single transaction (sign once).
+- Sending swap outputs to a custom recipient (ENS names supported).
+- Creating price-target Limit Orders (single or batch).
+- Built for Base mainnet (chainId 8453).
 
-A revolutionary DeFi protocol that enables batch swapping of multiple tokens in a single transaction, with integrated limit orders functionality on Base mainnet.
+![App screenshot](assets/screenshot.png)
 
-## ✨ Features
+Powered by:
+- 1inch Swap API and Limit Order SDK
+- wagmi + viem
+- EIP-5792 sendCalls (batch transactions)
 
-- **🔄 Batch Swaps**: Execute multiple token swaps in one transaction using EIP-5792 sendCalls
-- **⚡ Gasless Transactions**: Free swaps powered by 1inch Fusion SDK (no gas fees!)
-- **⏰ Limit Orders**: Set price targets and trade automatically with 1inch integration
-- **🚀 Dual Mode**: Choose between Fusion (gasless) or Standard (with gas) batch swaps
-- **⚡ Base Optimized**: Built specifically for Base mainnet with low fees
-- **🎨 Beautiful UI**: Modern, responsive interface with real-time order tracking
-- **🔐 Secure**: Non-custodial, decentralized trading
+## Features
 
-## 🛠 Tech Stack
+- Batch Swap in one go
+  - Add multiple swap routes and execute them in one batch.
+  - Only one signature/confirmation, fewer popups.
+  - Optional receiver: paste a Base address or an ENS name (.eth), we resolve it automatically.
+  - Uses 1inch for quotes and calldata, then submits via wagmi sendCalls (EIP-5792).
+- Limit Orders
+  - Create limit orders with a specified price.
+  - Supports partial fills, expiration, and batch creation (several orders at once).
+  - Uses 1inch Limit Order SDK (EIP-712 signing + order submission).
+- Base-first
+  - Defaults to Base mainnet. wagmi config also includes Ethereum mainnet and Sepolia if needed.
 
-- **Frontend**: Next.js, React, TypeScript, Tailwind CSS, Framer Motion
-- **Web3**: Wagmi v2, Viem, RainbowKit
-- **Swapping**: 1inch Fusion SDK (gasless), 1inch Limit Order SDK
-- **Blockchain**: Base Mainnet (Chain ID: 8453)
-- **Batch Transactions**: EIP-5792 sendCalls + Fusion Resolvers
+## How it works
 
-## 🚀 Quick Start
+- Swaps
+  - UI: components/SwapInterface.tsx, SimpleBatchSwapButton.tsx
+  - Engine: hooks/useSimpleBatchSwap.ts + lib/simple-swap.ts
+  - We prepare approve + swap calls per route, then submit them as a single bundle with sendCalls (EIP-5792).
+  - Recipient support and ENS resolution via wagmi.
+- Limit Orders
+  - UI: components/LimitOrdersPanel.tsx
+  - Engine: hooks/useLimitOrder.ts (1inch Limit Order SDK)
+  - Flow: ensure token allowance → sign typed data (EIP-712) → submit order to 1inch orderbook API.
+- Token discovery and balances
+  - Token search via 1inch token endpoints.
+  - Basic token lists in lib/wagmi.ts (ETH, USDC, WETH, DAI on Base).
 
-### Prerequisites
+## Requirements
 
-- Node.js 18+ 
-- npm/yarn
-- Web3 wallet (MetaMask, etc.)
+- Node 18+ and a modern wallet (EIP-5792 batch support recommended)
+- 1inch API key (for real swaps and limit orders; without it, swaps/quotes run in demo mode and limit orders may be limited)
+- WalletConnect Project ID
+- RPC URLs (optional; public defaults included)
 
-### Installation
+## Quick start
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd multi-token-swap
-   ```
+1) Install
+- npm i
+- or
+- pnpm i
+- or
+- yarn
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp env.example .env.local
-   ```
-   
-   Fill in your API keys:
-   - Get WalletConnect Project ID: https://cloud.walletconnect.com/
-   - Get 1inch API Key: https://portal.1inch.dev/
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Open http://localhost:3000**
-
-## 🔧 Configuration
-
-### API Keys Configuration
-
-1. **WalletConnect Project ID** (REQUIRED)
-   - Go to https://cloud.walletconnect.com/
-   - Create a new project
-   - Copy the Project ID
-   - **Required for wallet connections**
-
-2. **1inch API Key** (REQUIRED for full features)
-   - Go to https://portal.1inch.dev/
-   - Create an account and generate API key
-   - **Features availability**:
-     - ✅ **With API Key**: 
-       - Gasless swaps via Fusion SDK (no gas fees!)
-       - Real-time quotes and optimal routing
-       - Limit orders functionality
-       - High rate limits
-     - ⚠️ **Without API Key** (Demo Mode):
-       - Basic batch swaps work
-       - Simulated quotes
-       - Limited functionality
-       - Rate limited
-
-### 🚀 Quick Start (No API Key Needed!)
-
-You can run the app immediately without any API keys:
-
-1. **Clone and install**
-   ```bash
-   git clone <repo-url>
-   cd multi-token-swap
-   npm install
-   ```
-
-2. **Start development**
-   ```bash
-   npm run dev
-   ```
-
-3. **Add WalletConnect ID later** (for wallet connections)
-   - Copy `env.example` to `.env.local`
-   - Add your WalletConnect Project ID
-
-### Optional Configuration
-
-- **Custom RPC**: Set `NEXT_PUBLIC_BASE_RPC_URL` for custom Base RPC endpoint
-- **Analytics**: Add analytics tracking ID
-
-## 🎯 How It Works
-
-### Fusion Batch Swaps (Gasless ⚡)
-1. Add multiple token swap routes
-2. Configure slippage and deadline
-3. Select **Fusion Mode** (enabled by default)
-4. Click "Swap Multiple Tokens (Gasless ⚡)"
-5. Create Fusion orders - resolvers execute them for free!
-6. Track order status in real-time
-
-**How Gasless Works:**
-- Creates off-chain orders through 1inch Fusion SDK
-- Resolvers (third-party relayers) execute orders
-- Resolvers pay gas fees and take small commission
-- You pay ZERO gas fees!
-
-### Standard Batch Swaps (With Gas)
-1. Add multiple token swap routes
-2. Select **Standard Mode**
-3. Click "Swap Multiple Tokens"
-4. Uses EIP-5792 sendCalls for batch transactions
-5. Approve tokens if needed (batched with swaps)
-6. Execute all swaps in one transaction
-
-### Limit Orders
-1. Go to "Limit Orders" tab
-2. Set sell token and amount
-3. Set minimum buy token amount
-4. Create limit order via 1inch Limit Order SDK
-5. Order executes automatically when price target is met
-
-## 🏗 Architecture
-
+2) Env
+Create .env.local in the project root:
 ```
-├── components/                # React components
-│   ├── SwapInterface.tsx         # Main swap interface
-│   ├── SwapRoute.tsx             # Individual swap route
-│   ├── TokenSelector.tsx         # Token selection modal
-│   ├── AmountInput.tsx           # Amount input with validation
-│   ├── BatchSwapButton.tsx       # Batch execution (Fusion + Standard)
-│   └── LimitOrdersPanel.tsx      # Limit orders interface
-├── hooks/                     # Custom React hooks
-│   ├── useBatchSwap.ts           # Dual-mode batch swap (Fusion/Standard)
-│   ├── useLimitOrders.ts         # Limit orders management
-│   └── useTokenBalance.ts        # Token balance tracking
-├── lib/                       # Services and utilities
-│   ├── wagmi.ts                  # Wagmi v2 configuration
-│   ├── 1inch-fusion.ts           # Fusion SDK service (gasless)
-│   ├── 1inch-limit-order.ts      # Limit Order SDK service
-│   ├── fusion-utils.ts           # Fusion helper utilities
-│   └── 1inch-sdk.ts              # Legacy SDK wrapper
-├── pages/                     # Next.js pages
-│   ├── _app.tsx                  # App wrapper with providers
-│   ├── index.tsx                 # Main swap page
-│   └── api/1inch/[...path].ts    # 1inch API proxy
-└── types/                     # TypeScript definitions
-    └── index.ts                  # Shared types
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
+NEXT_PUBLIC_ONEINCH_API_KEY=your_1inch_api_key
+
+# Optional custom RPCs
+NEXT_PUBLIC_BASE_RPC_URL=https://mainnet.base.org
+NEXT_PUBLIC_MAINNET_RPC_URL=https://ethereum-rpc.publicnode.com
+NEXT_PUBLIC_SEPOLIA_RPC_URL=https://eth-sepolia.public.blastapi.io
 ```
 
-### Key Components
+3) Run
+- npm run dev
+- or
+- pnpm dev
+- or
+- yarn dev
 
-- **`lib/1inch-fusion.ts`**: Fusion SDK integration for gasless swaps
-- **`lib/fusion-utils.ts`**: Helper functions for Fusion orders
-- **`hooks/useBatchSwap.ts`**: Dual-mode hook (Fusion/Standard)
-- **`components/BatchSwapButton.tsx`**: Smart button with mode selection
+Open http://localhost:3000, connect your wallet on Base.
 
-## 🔐 Security Features
+## Usage
 
-- **Non-custodial**: Users maintain full control of their funds
-- **Smart Contract Audited**: Using battle-tested 1inch protocols
-- **Slippage Protection**: Configurable slippage tolerance
-- **Transaction Simulation**: Preview before execution
+- Batch Swap
+  - Add one or more routes, enter amounts, optionally set a different recipient (Base address or ENS).
+  - Adjust slippage/deadline if needed.
+  - Click “Swap … Tokens” and sign once.
+  - You’ll get a single batch with all approves + swaps. Track it on BaseScan.
 
-## 🎨 UI/UX Features
+- Limit Orders
+  - Open the “Limit Orders” tab.
+  - For each order: pick tokenIn/tokenOut, enter amount and target price, set expiration and partial fill.
+  - Click “Create … Limit Orders”.
+  - You’ll approve (if needed) and sign an EIP-712 order message; orders are submitted to 1inch.
 
-- **Responsive Design**: Works on desktop and mobile
-- **Smooth Animations**: Powered by Framer Motion
-- **Dark/Light Mode**: Adaptive theming
-- **Real-time Updates**: Live price feeds and order status
-- **Transaction History**: Track all your swaps and orders
+## Notes
 
-## 🧪 Testing
+- Wallet support: Batch execution uses EIP-5792 (sendCalls). Use a provider/wallet that supports it for best UX.
+- API key:
+  - Without NEXT_PUBLIC_ONEINCH_API_KEY, the app runs in demo mode for swaps (mocked quotes/tx).
+  - Limit Orders require an API key for full functionality (1inch orderbook).
+- Network: Built for Base mainnet (8453). wagmi config also includes Ethereum mainnet and Sepolia.
 
-```bash
-# Type checking
-npm run type-check
+## Tech stack
 
-# Linting
-npm run lint
+- React/Next.js, TypeScript
+- wagmi, viem
+- 1inch Swap API and Limit Order SDK
+- EIP-5792 batch calls
 
-# Build
-npm run build
-```
+## Security
 
-## 📱 Supported Wallets
-
-- MetaMask
-- WalletConnect compatible wallets
-- Coinbase Wallet
-- Rainbow Wallet
-- And more...
-
-## 🌐 Supported Tokens
-
-Currently supports major tokens on Base mainnet:
-- ETH (Native)
-- WETH
-- USDC
-- DAI
-- And more ERC-20 tokens available through 1inch
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-1. Push to GitHub
-2. Connect to Vercel
-3. Add environment variables
-4. Deploy
-
-### Manual Deployment
-
-```bash
-npm run build
-npm start
-```
-
-## 🤝 Contributing
-
-This is a hackathon project, but contributions are welcome!
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🏆 Hackathon Submission
-
-**Event**: ETHRome 2025  
-**Track**: DeFi Innovation  
-**Team**: [Your Team Name]
-
-### Key Innovations
-
-1. **Gasless Batch Swaps**: Revolutionary implementation of 1inch Fusion SDK for batch swaps with ZERO gas fees
-2. **Dual-Mode Architecture**: Flexible switching between Fusion (gasless) and Standard (EIP-5792 sendCalls) modes
-3. **Smart Order Routing**: Automatic optimal routing through Fusion resolvers
-4. **UX Innovation**: Seamless multi-token trading with real-time order tracking
-5. **Base Integration**: Native optimization for Base ecosystem with low latency
-
-### Technical Highlights
-
-- **1inch Fusion SDK**: Leverages off-chain orders executed by resolvers
-- **EIP-5792 sendCalls**: Batch transaction standard for on-chain swaps
-- **Wagmi v2**: Modern Web3 React hooks with sendCalls support
-- **TypeScript**: Full type safety across the entire stack
-- **Real-time Updates**: Live order status tracking for Fusion orders
-
-## 📞 Support
-
-For questions or support:
-- GitHub Issues: [Link to issues]
-- Discord: [Your Discord]
-- Email: [Your Email]
-
-## 🙏 Acknowledgments
-
-- **1inch**: For the excellent DEX aggregation API
-- **Wagmi**: For the amazing Web3 React hooks
-- **Base**: For the fast and cheap L2 infrastructure
-- **ETHRome**: For organizing this amazing hackathon
-
----
-
-Built with ❤️ for ETHRome Hackathon 2025
+- Always verify addresses and ENS names before sending.
+- Read code and test with small amounts first.
+- You are responsible for your keys and funds.
