@@ -52,30 +52,17 @@ Powered by:
 ## Quick start
 
 1) Install
-- npm i
-- or
-- pnpm i
-- or
-- yarn
+- npm install
 
 2) Env
 Create .env.local in the project root:
 ```
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
 NEXT_PUBLIC_ONEINCH_API_KEY=your_1inch_api_key
-
-# Optional custom RPCs
-NEXT_PUBLIC_BASE_RPC_URL=https://mainnet.base.org
-NEXT_PUBLIC_MAINNET_RPC_URL=https://ethereum-rpc.publicnode.com
-NEXT_PUBLIC_SEPOLIA_RPC_URL=https://eth-sepolia.public.blastapi.io
 ```
 
 3) Run
 - npm run dev
-- or
-- pnpm dev
-- or
-- yarn dev
 
 Open http://localhost:3000, connect your wallet on Base.
 
@@ -107,9 +94,3 @@ Open http://localhost:3000, connect your wallet on Base.
 - wagmi, viem
 - 1inch Swap API and Limit Order SDK
 - EIP-5792 batch calls
-
-## Security
-
-- Always verify addresses and ENS names before sending.
-- Read code and test with small amounts first.
-- You are responsible for your keys and funds.
