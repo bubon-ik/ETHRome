@@ -20,7 +20,7 @@
   ],
   "author": "ETHRome Hackathon",
   "license": "MIT",
-  "description": "Multi-token swap protocol with batch transactions and limit orders on Base",
+  "description": "KittensSwap protocol with batch transactions and limit orders on Base",
   "dependencies": {
     "@1inch/limit-order-sdk": "^5.2.2",
     "@headlessui/react": "^2.2.9",

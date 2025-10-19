@@ -1,4 +1,4 @@
-# MultiSwap - Multi-Token Swap Protocol
+# MultiSwap - KittensSwap Protocol
 
 🏆 **ETHRome Hackathon Project** 🏆
 

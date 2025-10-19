@@ -83,7 +83,7 @@ const SwapInterface: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-4 sm:mb-5 lg:mb-6">
           <div>
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Multi-Token Swap</h1>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">KittensSwap</h1>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">Execute multiple token swaps in one transaction</p>
           </div>
           <button

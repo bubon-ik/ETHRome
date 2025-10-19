@@ -141,7 +141,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Multi-Token Swap - ETHRome Hackathon</title>
+        <title>KittensSwap - ETHRome Hackathon</title>
         <meta name="description" content="Swap multiple tokens in a single transaction with limit orders" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link rel="icon" href="/favicon.ico" />
@@ -171,7 +171,7 @@ export default function Home() {
                   <ArrowsRightLeftIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white relative z-10" />
                 </div>
                 <h1 className="text-lg sm:text-xl font-bold gradient-text">
-                  <span className="hidden sm:inline">Multi-Token Swap</span>
+                  <span className="hidden sm:inline">KittensSwap</span>
                   <span className="sm:hidden">MTS</span>
                 </h1>
               </motion.div>
@@ -352,7 +352,7 @@ export default function Home() {
             </h2>
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 dark:text-white/80 max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto px-2 sm:px-0 leading-relaxed">
               Experience the future of DeFi with batch swaps and limit orders on Base mainnet.
-              Save on gas fees and time with our innovative multi-token swap protocol.
+              Save on gas fees and time with our innovative KittensSwap protocol.
             </p>
           </motion.div>
 
@@ -365,7 +365,7 @@ export default function Home() {
           >
             {activeTab === 'swap' && (
               <div className="space-y-6">
-                {/* Multi-Token Swap Interface */}
+                {/* KittensSwap Interface */}
                 <SwapInterface />
               </div>
             )}
