@@ -4,7 +4,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import { Token, TokenSearchResult } from '@/types';
-import { BASE_TOKENS } from '@/lib/wagmi';
+import { BASE_TOKENS_ETH } from '@/lib/wagmi';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { useTokenSearch } from '@/hooks/useTokenSearch';
 
@@ -52,7 +52,7 @@ interface TokenSelectorProps {
 const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [allTokens, setAllTokens] = useState<Token[]>(BASE_TOKENS);
+  const [allTokens, setAllTokens] = useState<Token[]>(BASE_TOKENS_ETH);
   const [searchResults, setSearchResults] = useState<Token[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -60,7 +60,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
 
   // Загружаем все токены при открытии модального окна
   useEffect(() => {
-    if (isOpen && allTokens.length === BASE_TOKENS.length) {
+    if (isOpen && allTokens.length === BASE_TOKENS_ETH.length) {
       loadAllTokens();
     }
   }, [isOpen]);
@@ -86,7 +86,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
         chainId: 8453,
         logoURI: token.logoURI
       }));
-      setAllTokens([...BASE_TOKENS, ...convertedTokens]);
+      setAllTokens([...BASE_TOKENS_ETH, ...convertedTokens]);
     } catch (error) {
       console.error('Failed to load tokens:', error);
     }
@@ -94,7 +94,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
 
   const performSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     setIsSearching(true);
     try {
       console.log('Searching for:', searchQuery);
@@ -104,9 +104,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
         limit: 20,
         ignoreListed: false
       });
-      
+
       console.log('Search results:', results);
-      
+
       const convertedTokens: Token[] = results.map(token => ({
         address: token.address,
         symbol: token.symbol,
@@ -115,7 +115,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ selectedToken, onSelect }
         chainId: 8453,
         logoURI: token.logoURI
       }));
-      
+
       console.log('Converted tokens:', convertedTokens);
       setSearchResults(convertedTokens);
     } catch (error) {

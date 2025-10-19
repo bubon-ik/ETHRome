@@ -4,14 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SwapRoute from './SwapRoute';
 import SimpleBatchSwapButton from './SimpleBatchSwapButton';
 import { SwapRoute as SwapRouteType, Token } from '@/types';
-import { BASE_TOKENS } from '@/lib/wagmi';
+import { BASE_TOKENS_ETH } from '@/lib/wagmi';
 import { oneInchService } from '@/lib/1inch';
 
 const SwapInterface: React.FC = () => {
   const [routes, setRoutes] = useState<SwapRouteType[]>([
     {
-      from: { ...BASE_TOKENS[0], amount: '' },
-      to: { ...BASE_TOKENS[1], amount: '' },
+      from: { ...BASE_TOKENS_ETH[0], amount: '' },
+      to: { ...BASE_TOKENS_ETH[1], amount: '' },
     }
   ]);
   const [currentRouteIndex, setCurrentRouteIndex] = useState(0);
@@ -24,7 +24,7 @@ const SwapInterface: React.FC = () => {
   React.useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return; // Don't interfere with input fields
-      
+
       if (e.key === 'ArrowLeft') {
         setCurrentRouteIndex(prev => Math.max(0, prev - 1));
       } else if (e.key === 'ArrowRight') {
@@ -39,8 +39,8 @@ const SwapInterface: React.FC = () => {
   const addRoute = useCallback(() => {
     setRoutes(prev => {
       const newRoutes = [...prev, {
-        from: { ...BASE_TOKENS[0], amount: '' },
-        to: { ...BASE_TOKENS[1], amount: '' },
+        from: { ...BASE_TOKENS_ETH[0], amount: '' },
+        to: { ...BASE_TOKENS_ETH[1], amount: '' },
       }];
       // Automatically navigate to the new route
       setCurrentRouteIndex(newRoutes.length - 1);
@@ -194,8 +194,8 @@ const SwapInterface: React.FC = () => {
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setCurrentRouteIndex(index)}
                     className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300 ${
-                      currentRouteIndex === index 
-                        ? 'bg-blue-500 w-4 sm:w-6' 
+                      currentRouteIndex === index
+                        ? 'bg-blue-500 w-4 sm:w-6'
                         : 'bg-gray-300 dark:bg-gray-600 hover:bg-blue-300'
                     }`}
                   />
@@ -205,7 +205,7 @@ const SwapInterface: React.FC = () => {
                 {currentRouteIndex + 1} of {routes.length}
               </span>
             </div>
-            
+
             {/* Navigation Arrows */}
             <div className="flex items-center gap-1 sm:gap-2">
               <motion.button
@@ -238,13 +238,13 @@ const SwapInterface: React.FC = () => {
           </div>
 
           {/* Cards Container */}
-          <motion.div 
+          <motion.div
             className="relative overflow-hidden rounded-xl lg:rounded-2xl"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={(_, { offset, velocity }) => {
               const swipe = Math.abs(offset.x) * velocity.x;
-              
+
               if (swipe < -10000) {
                 // Swipe left (next route)
                 setCurrentRouteIndex(prev => Math.min(routes.length - 1, prev + 1));
@@ -254,7 +254,7 @@ const SwapInterface: React.FC = () => {
               }
             }}
           >
-            <motion.div 
+            <motion.div
               className="flex"
               animate={{ x: -currentRouteIndex * 100 + '%' }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -263,9 +263,9 @@ const SwapInterface: React.FC = () => {
                 <div key={index} className="w-full flex-shrink-0">
                   <motion.div
                     initial={false}
-                    animate={{ 
+                    animate={{
                       scale: currentRouteIndex === index ? 1 : 0.95,
-                      opacity: currentRouteIndex === index ? 1 : 0.7 
+                      opacity: currentRouteIndex === index ? 1 : 0.7
                     }}
                     transition={{ duration: 0.3 }}
                     className="mx-1 sm:mx-2"
@@ -312,7 +312,7 @@ const SwapInterface: React.FC = () => {
               →
             </motion.div>
           </motion.button>
-          
+
           {routes.length > 1 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
